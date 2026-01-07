@@ -4,22 +4,18 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "VTB Backend API",
+      title: "Sheltax Backend API",
       version: "1.0.0",
-      description: "Comprehensive API for managing events, bookings, films, library, museum, and travel services",
+      description: "Real Estate Platform API for property seekers, agents, and owners",
       contact: {
         name: "API Support",
-        email: "support@vtb.com",
+        email: "support@sheltax.com",
       },
     },
     servers: [
       {
-        url: "http://localhost:6000/v1/api",
+        url: "http://localhost:7000/v1/api",
         description: "Development server",
-      },
-      {
-        url: "https://cb-backend-qwxd.onrender.com/v1/api",
-        description: "Production server",
       },
     ],
     components: {
@@ -127,53 +123,16 @@ const options = {
         description: "User authentication and authorization endpoints",
       },
       {
-        name: "Events",
-        description: "Event management endpoints (Admin)",
-      },
-      {
-        name: "Events - Public",
-        description: "Public event viewing endpoints",
-      },
-      {
-        name: "Event Bookings",
-        description: "Event registration and booking management",
-      },
-      {
-        name: "Albums",
-        description: "Event album management",
-      },
-      {
-        name: "Films",
-        description: "Film and screening management",
-      },
-      {
-        name: "Library",
-        description: "Library books and reading visit management",
-      },
-      {
-        name: "Museum",
-        description: "Museum artifacts and rental management",
-      },
-      {
-        name: "Tours",
-        description: "Travel tours booking and management",
-      },
-      {
-        name: "Trips",
-        description: "Travel trips booking and management",
-      },
-      {
-        name: "Payment",
-        description: "Payment processing endpoints",
+        name: "Profile",
+        description: "User profile management endpoints",
       },
     ],
   },
   apis: [
-    "./src/docs/*.swagger.js",
-    "./src/features/*/route.js",
-    "./src/features/*/routes.js",
-    "./src/features/Travels/*/route.js",
-    "./src/routes/index.js",
+    "./src/docs/auth.swagger.js",
+    "./src/docs/profile.swagger.js",
+    "./src/features/Authentication/routes.js",
+    "./src/features/Profile/routes.js",
   ],
 };
 

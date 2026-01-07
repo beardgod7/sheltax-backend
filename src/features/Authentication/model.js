@@ -1,4 +1,4 @@
-const { DataTypes } = require("sequelize");
+const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../../config/dbconfig");
 const Userhash = require("../../utils/bcrypt");
 
@@ -19,12 +19,40 @@ const User = sequelize.define(
     },
     password: {
       type: DataTypes.STRING,
+      allowNull: true, // Allow null for Google OAuth users
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    googleId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    twitterId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    facebookId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    profilePicture: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    signup_channel: {
+      type: DataTypes.ENUM("manual", "google", "twitter", "facebook"),
       allowNull: false,
+      defaultValue: "manual",
     },
     role: {
-      type: DataTypes.ENUM("Admin", "User", "SuperAdmin"),
+      type: DataTypes.ENUM("seeker", "owner", "agent", "admin", "super_admin"),
       allowNull: false,
-      defaultValue: "User",
+      defaultValue: "seeker",
     },
     verified: {
       type: DataTypes.BOOLEAN,
@@ -33,17 +61,47 @@ const User = sequelize.define(
     },
   },
   {
-    tableName: "User1",
+    tableName: "User",
     timestamps: true,
     indexes: [
       {
         unique: true,
         fields: ["email"],
       },
+      {
+        unique: true,
+        fields: ["googleId"],
+        where: {
+          googleId: {
+            [Op.ne]: null,
+          },
+        },
+      },
+      {
+        unique: true,
+        fields: ["twitterId"],
+        where: {
+          twitterId: {
+            [Op.ne]: null,
+          },
+        },
+      },
+      {
+        unique: true,
+        fields: ["facebookId"],
+        where: {
+          facebookId: {
+            [Op.ne]: null,
+          },
+        },
+      },
     ],
     hooks: {
       beforeCreate: async (user) => {
-        await Userhash.hashPassword(user);
+        // Only hash password if it exists (not for Google OAuth users)
+        if (user.password) {
+          await Userhash.hashPassword(user);
+        }
       },
     },
   }
@@ -81,7 +139,7 @@ const Token = sequelize.define(
     },
   },
   {
-    tableName: "Tokens1",
+    tableName: "Tokens2",
     timestamps: false,
   }
 );

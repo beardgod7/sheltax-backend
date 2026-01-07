@@ -5,6 +5,9 @@ const {
   findUserById,
   updateUser,
   getAllUsersWithProfiles,
+  findOrCreateGoogleUser,
+  findOrCreateTwitterUser,
+  findOrCreateFacebookUser,
 } = require("./repository");
 
 const Userhash = require("../../utils/bcrypt");
@@ -14,9 +17,15 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   resendVerificationSchema,
+  googleOAuthSchema,
+  twitterOAuthSchema,
+  facebookOAuthSchema,
 } = require("./schema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+const axios = require("axios");
+const crypto = require("crypto");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -100,7 +109,7 @@ async function signup(req, res, next) {
 // Admin Signup
 async function AdminSignup(req, res, next) {
   try {
-    req.body.role = "Admin";
+    req.body.role = "admin";
     return signup(req, res, next);
   } catch (err) {
     console.error("Error in Admin signup:", err);
@@ -469,7 +478,7 @@ async function createSuperAdmin() {
       return;
     }
     const existingAdmin = await User.findOne({
-      where: { email: superAdminEmail, role: "SuperAdmin" },
+      where: { email: superAdminEmail, role: "super_admin" },
     });
     if (existingAdmin) {
       // console.log("Super admin already exists.");
@@ -480,7 +489,7 @@ async function createSuperAdmin() {
       username: "SuperAdmin",
       email: superAdminEmail,
       password: hashedPassword,
-      role: "SuperAdmin",
+      role: "super_admin",
       signup_channel: "manual",
       account_status: "active",
       verified: true,
@@ -523,6 +532,258 @@ async function getUsers(req, res) {
   }
 }
 
+// Google OAuth Login/Signup
+async function googleOAuth(req, res, next) {
+  try {
+    const validatedData = await googleOAuthSchema.validateAsync(req.body);
+    const { idToken } = validatedData;
+
+    // Initialize Google OAuth client
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    // Verify the Google ID token
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture, email_verified } = payload;
+
+    if (!email_verified) {
+      return res.status(400).json({ 
+        message: "Google account email is not verified" 
+      });
+    }
+
+    // Check if user exists or create new user
+    const user = await findOrCreateGoogleUser({
+      email: email.toLowerCase(),
+      username: name,
+      googleId: payload.sub,
+      profilePicture: picture,
+      verified: true, // Google accounts are pre-verified
+      signup_channel: "google",
+    });
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Store refresh token
+    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    let tokenRecord = await Token.findOne({
+      where: { userId: user.id, token_type: "refresh_token" },
+    });
+
+    if (tokenRecord) {
+      tokenRecord.token = refreshToken;
+      tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
+      await tokenRecord.save();
+    } else {
+      await Token.create({
+        userId: user.id,
+        token: refreshToken,
+        token_type: "refresh_token",
+        expiresIn: new Date(decodedRefreshToken.exp * 1000),
+      });
+    }
+
+    return res.status(200).json({
+      message: user.isNewUser ? "Account created successfully with Google" : "Login successful",
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      role: user.role,
+      verification: user.verified,
+      id: user.id,
+      isNewUser: user.isNewUser,
+    });
+
+  } catch (error) {
+    console.error("Google OAuth Error: ", error);
+    if (error.message.includes("Token used too early") || error.message.includes("Invalid token")) {
+      return res.status(400).json({ 
+        message: "Invalid Google token" 
+      });
+    }
+    return res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: error.message 
+    });
+  }
+}
+
+// Twitter OAuth Login/Signup
+async function twitterOAuth(req, res, next) {
+  try {
+    const validatedData = await twitterOAuthSchema.validateAsync(req.body);
+    const { oauth_token, oauth_verifier } = validatedData;
+
+    // Exchange oauth_token and oauth_verifier for access token
+    const twitterResponse = await axios.post(
+      'https://api.twitter.com/oauth/access_token',
+      `oauth_token=${oauth_token}&oauth_verifier=${oauth_verifier}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    const responseData = new URLSearchParams(twitterResponse.data);
+    const accessToken = responseData.get('oauth_token');
+    const accessTokenSecret = responseData.get('oauth_token_secret');
+    const userId = responseData.get('user_id');
+    const screenName = responseData.get('screen_name');
+
+    if (!accessToken || !userId) {
+      return res.status(400).json({ 
+        message: "Invalid Twitter OAuth response" 
+      });
+    }
+
+    // Get user profile from Twitter API v2
+    const userProfileResponse = await axios.get(
+      `https://api.twitter.com/2/users/${userId}?user.fields=profile_image_url,public_metrics`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+        },
+      }
+    );
+
+    const twitterUser = userProfileResponse.data.data;
+
+    // Create user data object
+    const userData = {
+      email: null, // Twitter doesn't always provide email
+      username: twitterUser.username || screenName,
+      twitterId: userId,
+      profilePicture: twitterUser.profile_image_url,
+    };
+
+    // Find or create user
+    const user = await findOrCreateTwitterUser(userData);
+
+    // Generate tokens
+    const accessTokenJWT = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Store refresh token
+    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    let tokenRecord = await Token.findOne({
+      where: { userId: user.id, token_type: "refresh_token" },
+    });
+
+    if (tokenRecord) {
+      tokenRecord.token = refreshToken;
+      tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
+      await tokenRecord.save();
+    } else {
+      await Token.create({
+        userId: user.id,
+        token: refreshToken,
+        token_type: "refresh_token",
+        expiresIn: new Date(decodedRefreshToken.exp * 1000),
+      });
+    }
+
+    return res.status(200).json({
+      message: user.isNewUser ? "Account created successfully with Twitter" : "Login successful",
+      access_token: accessTokenJWT,
+      refresh_token: refreshToken,
+      role: user.role,
+      verification: user.verified,
+      id: user.id,
+      isNewUser: user.isNewUser,
+    });
+
+  } catch (error) {
+    console.error("Twitter OAuth Error: ", error);
+    return res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: error.message 
+    });
+  }
+}
+
+// Facebook OAuth Login/Signup
+async function facebookOAuth(req, res, next) {
+  try {
+    const validatedData = await facebookOAuthSchema.validateAsync(req.body);
+    const { accessToken } = validatedData;
+
+    // Verify Facebook access token and get user data
+    const facebookResponse = await axios.get(
+      `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${accessToken}`
+    );
+
+    const facebookUser = facebookResponse.data;
+
+    if (!facebookUser.id) {
+      return res.status(400).json({ 
+        message: "Invalid Facebook access token" 
+      });
+    }
+
+    // Create user data object
+    const userData = {
+      email: facebookUser.email,
+      username: facebookUser.name,
+      facebookId: facebookUser.id,
+      profilePicture: facebookUser.picture?.data?.url,
+    };
+
+    // Find or create user
+    const user = await findOrCreateFacebookUser(userData);
+
+    // Generate tokens
+    const accessTokenJWT = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // Store refresh token
+    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    let tokenRecord = await Token.findOne({
+      where: { userId: user.id, token_type: "refresh_token" },
+    });
+
+    if (tokenRecord) {
+      tokenRecord.token = refreshToken;
+      tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
+      await tokenRecord.save();
+    } else {
+      await Token.create({
+        userId: user.id,
+        token: refreshToken,
+        token_type: "refresh_token",
+        expiresIn: new Date(decodedRefreshToken.exp * 1000),
+      });
+    }
+
+    return res.status(200).json({
+      message: user.isNewUser ? "Account created successfully with Facebook" : "Login successful",
+      access_token: accessTokenJWT,
+      refresh_token: refreshToken,
+      role: user.role,
+      verification: user.verified,
+      id: user.id,
+      isNewUser: user.isNewUser,
+    });
+
+  } catch (error) {
+    console.error("Facebook OAuth Error: ", error);
+    if (error.response?.status === 400) {
+      return res.status(400).json({ 
+        message: "Invalid Facebook access token" 
+      });
+    }
+    return res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: error.message 
+    });
+  }
+}
+
 module.exports = {
   signup,
   verifyEmail,
@@ -537,4 +798,7 @@ module.exports = {
   getUsersById,
   approveUser,
   getUsers,
+  googleOAuth,
+  twitterOAuth,
+  facebookOAuth,
 };

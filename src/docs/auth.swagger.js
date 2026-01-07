@@ -11,17 +11,35 @@
  *         email:
  *           type: string
  *           format: email
- *         firstName:
+ *         username:
  *           type: string
- *         lastName:
+ *         googleId:
  *           type: string
+ *           description: Google account ID
+ *         twitterId:
+ *           type: string
+ *           description: Twitter account ID
+ *         facebookId:
+ *           type: string
+ *           description: Facebook account ID
+ *         profilePicture:
+ *           type: string
+ *           description: URL to user's profile picture
+ *         signup_channel:
+ *           type: string
+ *           enum: [manual, google, twitter, facebook]
+ *           description: How the user signed up
  *         role:
  *           type: string
- *           enum: [User, Admin, SuperAdmin]
- *         isVerified:
+ *           enum: [seeker, owner, agent, admin, super_admin]
+ *         verified:
  *           type: boolean
- *         isApproved:
- *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  *
  * /auth/signup:
  *   post:
@@ -50,8 +68,8 @@
  *                 type: string
  *               role:
  *                 type: string
- *                 enum: [Admin, User]
- *                 default: User
+ *                 enum: [seeker, owner, agent, admin]
+ *                 default: seeker
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -66,6 +84,147 @@
  *                   $ref: '#/components/schemas/User'
  *       400:
  *         $ref: '#/components/responses/BadRequestError'
+ *
+ * /auth/google-oauth:
+ *   post:
+ *     summary: Login or signup with Google OAuth
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idToken
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Google ID token received from Google OAuth
+ *     responses:
+ *       200:
+ *         description: Google OAuth successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 access_token:
+ *                   type: string
+ *                 refresh_token:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 verification:
+ *                   type: boolean
+ *                 id:
+ *                   type: string
+ *                 isNewUser:
+ *                   type: boolean
+ *                   description: Indicates if this is a new user registration
+ *       400:
+ *         description: Invalid Google token or unverified email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ *
+ * /auth/twitter-oauth:
+ *   post:
+ *     summary: Login or signup with Twitter OAuth
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - oauth_token
+ *               - oauth_verifier
+ *             properties:
+ *               oauth_token:
+ *                 type: string
+ *                 description: Twitter OAuth token
+ *               oauth_verifier:
+ *                 type: string
+ *                 description: Twitter OAuth verifier
+ *     responses:
+ *       200:
+ *         description: Twitter OAuth successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 access_token:
+ *                   type: string
+ *                 refresh_token:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 verification:
+ *                   type: boolean
+ *                 id:
+ *                   type: string
+ *                 isNewUser:
+ *                   type: boolean
+ *       400:
+ *         description: Invalid Twitter OAuth credentials
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ *
+ * /auth/facebook-oauth:
+ *   post:
+ *     summary: Login or signup with Facebook OAuth
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - accessToken
+ *             properties:
+ *               accessToken:
+ *                 type: string
+ *                 description: Facebook access token
+ *     responses:
+ *       200:
+ *         description: Facebook OAuth successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 access_token:
+ *                   type: string
+ *                 refresh_token:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 verification:
+ *                   type: boolean
+ *                 id:
+ *                   type: string
+ *                 isNewUser:
+ *                   type: boolean
+ *       400:
+ *         description: Invalid Facebook access token
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
  *
  * /auth/login:
  *   post:

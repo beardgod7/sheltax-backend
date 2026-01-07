@@ -1,4 +1,4 @@
-const sgMail = require("@sendgrid/mail");
+const nodemailer = require("nodemailer");
 const {
   getRegistrationConfirmationTemplate,
   getBroadcastTemplate,
@@ -6,122 +6,164 @@ const {
   getVolunteerConfirmationTemplate,
 } = require("../utils/emailTemplates");
 
+// Create Google SMTP transporter
+const createGmailTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+};
+
+// Fallback to SendGrid if Gmail fails
+const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-async function sendResetCodeEmail(email, resetCode) {
-  const msg = {
-    to: email,
-    from: process.env.SENDER_EMAIL,
-    subject: "reset password OTP Code",
-    text: `Your reset password OTP code is: ${resetCode}`,
-    html: `<strong>Your OTP code is: ${resetCode}</strong>`,
-  };
-
+// Helper function to send email with Gmail primary and SendGrid fallback
+async function sendEmailWithFallback(mailOptions) {
   try {
-    await sgMail.send(msg);
-    console.log(`OTP sent to ${resetCode}`);
+    // Try Gmail first
+    const transporter = createGmailTransporter();
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully via Gmail to ${mailOptions.to}`);
     return true;
-  } catch (error) {
-    console.error(
-      "Failed to send OTP email:",
-      error.response?.body || error.message
-    );
-    return false;
+  } catch (gmailError) {
+    console.warn(`Gmail failed: ${gmailError.message}. Trying SendGrid fallback...`);
+    
+    try {
+      // Fallback to SendGrid
+      const sgMailOptions = {
+        to: mailOptions.to,
+        from: process.env.SENDGRID_FROM_EMAIL || process.env.SENDER_EMAIL,
+        subject: mailOptions.subject,
+        text: mailOptions.text,
+        html: mailOptions.html,
+      };
+      
+      await sgMail.send(sgMailOptions);
+      console.log(`Email sent successfully via SendGrid fallback to ${mailOptions.to}`);
+      return true;
+    } catch (sendGridError) {
+      console.error(`Both Gmail and SendGrid failed:`, {
+        gmail: gmailError.message,
+        sendgrid: sendGridError.response?.body || sendGridError.message
+      });
+      return false;
+    }
   }
 }
 
-async function sendVerificationCodeEmail(email, verificationCode) {
-  const msg = {
+async function sendResetCodeEmail(email, resetCode) {
+  const mailOptions = {
     to: email,
-    from: process.env.SENDER_EMAIL,
-    subject: "Your OTP Code",
-    text: `Your OTP code is: ${verificationCode}`,
-    html: `<strong>Your OTP code is: ${verificationCode}</strong>`,
+    from: `${process.env.SENDER_NAME} <${process.env.SENDER_EMAIL}>`,
+    subject: "Reset Password OTP Code - Sheltax",
+    text: `Your reset password OTP code is: ${resetCode}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Password Reset Request</h2>
+        <p>You requested to reset your password. Use the OTP code below:</p>
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+          <h1 style="color: #007bff; font-size: 32px; margin: 0;">${resetCode}</h1>
+        </div>
+        <p>This code will expire in 5 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+        <hr>
+        <p style="color: #666; font-size: 12px;">Best regards,<br>Sheltax Team</p>
+      </div>
+    `,
   };
 
-  try {
-    await sgMail.send(msg);
-    console.log(`OTP sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error(
-      "Failed to send OTP email:",
-      error.response?.body || error.message
-    );
-    return false;
-  }
+  return await sendEmailWithFallback(mailOptions);
+}
+
+async function sendVerificationCodeEmail(email, verificationCode) {
+  const mailOptions = {
+    to: email,
+    from: `${process.env.SENDER_NAME} <${process.env.SENDER_EMAIL}>`,
+    subject: "Email Verification Code - Sheltax",
+    text: `Your email verification code is: ${verificationCode}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Welcome to Sheltax!</h2>
+        <p>Thank you for signing up. Please verify your email address using the code below:</p>
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+          <h1 style="color: #28a745; font-size: 32px; margin: 0;">${verificationCode}</h1>
+        </div>
+        <p>This code will expire in 5 minutes.</p>
+        <p>If you didn't create an account, please ignore this email.</p>
+        <hr>
+        <p style="color: #666; font-size: 12px;">Best regards,<br>Sheltax Team</p>
+      </div>
+    `,
+  };
+
+  return await sendEmailWithFallback(mailOptions);
 }
 
 async function sendRegistrationConfirmation(email, eventDetails, bookingDetails) {
   const template = getRegistrationConfirmationTemplate(eventDetails, bookingDetails);
   
-  const msg = {
+  const mailOptions = {
     to: email,
-    from: process.env.SENDER_EMAIL,
+    from: `${process.env.SENDER_NAME} <${process.env.SENDER_EMAIL}>`,
     subject: template.subject,
     text: template.text,
     html: template.html,
   };
 
-  try {
-    await sgMail.send(msg);
-    console.log(`Registration confirmation sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error(
-      "Failed to send registration confirmation:",
-      error.response?.body || error.message
-    );
-    return false;
-  }
+  return await sendEmailWithFallback(mailOptions);
 }
 
 async function sendVolunteerConfirmation(email, eventDetails, bookingDetails) {
   const template = getVolunteerConfirmationTemplate(eventDetails, bookingDetails);
   
-  const msg = {
+  const mailOptions = {
     to: email,
-    from: process.env.SENDER_EMAIL,
+    from: `${process.env.SENDER_NAME} <${process.env.SENDER_EMAIL}>`,
     subject: template.subject,
     text: template.text,
     html: template.html,
   };
 
-  try {
-    await sgMail.send(msg);
-    console.log(`Volunteer confirmation sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error(
-      "Failed to send volunteer confirmation:",
-      error.response?.body || error.message
-    );
-    return false;
-  }
+  return await sendEmailWithFallback(mailOptions);
 }
 
 async function sendBroadcastToAttendees(emails, eventTitle, subject, message, organizer) {
   const template = getBroadcastTemplate(eventTitle, subject, message, organizer);
   
-  const messages = emails.map((email) => ({
-    to: email,
-    from: process.env.SENDER_EMAIL,
-    subject: template.subject,
-    text: template.text,
-    html: template.html,
-  }));
-
-  try {
-    await sgMail.send(messages);
-    console.log(`Broadcast sent to ${emails.length} attendees`);
-    return true;
-  } catch (error) {
-    console.error(
-      "Failed to send broadcast:",
-      error.response?.body || error.message
-    );
-    return false;
+  // Send emails in batches to avoid rate limiting
+  const batchSize = 10;
+  const results = [];
+  
+  for (let i = 0; i < emails.length; i += batchSize) {
+    const batch = emails.slice(i, i + batchSize);
+    const batchPromises = batch.map(email => {
+      const mailOptions = {
+        to: email,
+        from: `${process.env.SENDER_NAME} <${process.env.SENDER_EMAIL}>`,
+        subject: template.subject,
+        text: template.text,
+        html: template.html,
+      };
+      return sendEmailWithFallback(mailOptions);
+    });
+    
+    const batchResults = await Promise.allSettled(batchPromises);
+    results.push(...batchResults);
+    
+    // Add delay between batches to respect rate limits
+    if (i + batchSize < emails.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
+  
+  const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
+  console.log(`Broadcast sent to ${successCount}/${emails.length} attendees`);
+  
+  return successCount > 0;
 }
 
 async function sendEventUpdate(emails, eventTitle, updateMessage, organizer) {
@@ -848,3 +890,21 @@ module.exports = {
   sendFilmScreeningReminder,
   sendFilmInquiryNotification,
 };
+
+// Test function to verify email configuration
+async function testEmailConfiguration() {
+  console.log('Testing email configuration...');
+  console.log('Gmail User:', process.env.GMAIL_USER ? '✓ Configured' : '✗ Missing');
+  console.log('Gmail App Password:', process.env.GMAIL_APP_PASSWORD ? '✓ Configured' : '✗ Missing');
+  console.log('Sender Email:', process.env.SENDER_EMAIL ? '✓ Configured' : '✗ Missing');
+  console.log('SendGrid API Key (Backup):', process.env.SENDGRID_API_KEY ? '✓ Configured' : '✗ Missing');
+  
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn('⚠️  Gmail SMTP not fully configured. Please check GOOGLE_SMTP_SETUP.md');
+  } else {
+    console.log('✅ Gmail SMTP configuration looks good!');
+  }
+}
+
+// Call test function on module load
+testEmailConfiguration();

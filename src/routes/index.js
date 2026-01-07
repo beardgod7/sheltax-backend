@@ -1,46 +1,25 @@
 const express = require("express");
-const { authenticate } = require("../middleware/authmiddleware");
 
+// Import feature routes
 const authRoutes = require("../features/Authentication/routes");
-const events = require("../features/Events/route");
-const eventbookings = require("../features/Booking/route");
-const event = require("../features/Events/routes");
-const paymentRoutes = require("../features/Payment/route");
-const tourRoutes = require("../features/Travels/Tours/route");
-const tripRoutes = require("../features/Travels/Trips/route");
+const profileRoutes = require("../features/Profile/routes");
 
 const router = express.Router();
 
-// Authentication
+// Health check route
+router.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "OK", 
+    message: "Sheltax Backend API is running",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Feature routes
 router.use("/auth", authRoutes);
+router.use("/profile", profileRoutes);
 
-// Events
-router.use("/events", events); // Admin routes (authorize middleware handles auth)
-router.use("/event", event); // Public routes
-router.use("/eventbooking", eventbookings); // Mixed routes (auth applied per route)
-
-// Payment Gateway
-router.use("/payment", paymentRoutes);
-
-// Travels - Tours
-router.use("/travels/tours", tourRoutes);
-
-// Travels - Trips
-router.use("/travels/trips", tripRoutes);
-
-// Library
-const libraryRoutes = require("../features/Library/route");
-router.use("/library", libraryRoutes);
-
-// Museum
-const museumRoutes = require("../features/Museum/route");
-router.use("/museum", museumRoutes);
-
-// Films
-const filmRoutes = require("../features/Films/route");
-router.use("/films", filmRoutes);
-
-// Catch-All for Undefined Routes
+// Catch-all for undefined routes
 router.use("*", (req, res) => {
   res.status(404).json({ message: "API endpoint not found" });
 });

@@ -14,11 +14,17 @@ const {
   getUsersById,
   approveUser,
   getUsers,
+  googleOAuth,
+  twitterOAuth,
+  facebookOAuth,
 } = require("./controller");
 const router = express.Router();
 
 // Signup routes
 router.post("/signup", signup);
+router.post("/google-oauth", googleOAuth);
+router.post("/twitter-oauth", twitterOAuth);
+router.post("/facebook-oauth", facebookOAuth);
 router.patch("/approve/:id", approveUser);
 
 //router.post("/admin-signup", validateJwt(["SuperAdmin"]), AdminSignup);

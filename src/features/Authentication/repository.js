@@ -127,6 +127,163 @@ async function getAllUsersWithProfiles() {
   }
 }
 
+/**
+ * Finds or creates a user for Google OAuth.
+ * @param {Object} userData - The user data from Google.
+ * @returns {Promise<User>} - The user with isNewUser flag.
+ */
+async function findOrCreateGoogleUser(userData) {
+  try {
+    // First try to find user by email
+    let user = await User.findOne({
+      where: {
+        email: { [Op.iLike]: userData.email },
+      },
+    });
+
+    let isNewUser = false;
+
+    if (user) {
+      // User exists, update Google ID if not set
+      if (!user.googleId && userData.googleId) {
+        user.googleId = userData.googleId;
+        user.profilePicture = userData.profilePicture;
+        user.signup_channel = "google";
+        await user.save();
+      }
+    } else {
+      // Create new user
+      user = await User.create({
+        email: userData.email,
+        username: userData.username,
+        googleId: userData.googleId,
+        profilePicture: userData.profilePicture,
+        signup_channel: userData.signup_channel,
+        verified: userData.verified,
+        role: "seeker",
+      });
+      isNewUser = true;
+    }
+
+    // Add isNewUser flag to the user object
+    user.isNewUser = isNewUser;
+    return user;
+  } catch (error) {
+    console.error("Error in findOrCreateGoogleUser:", error);
+    throw error;
+  }
+}
+
+/**
+ * Finds or creates a user for Twitter OAuth.
+ * @param {Object} userData - The user data from Twitter.
+ * @returns {Promise<User>} - The user with isNewUser flag.
+ */
+async function findOrCreateTwitterUser(userData) {
+  try {
+    // First try to find user by Twitter ID
+    let user = await User.findOne({
+      where: {
+        twitterId: userData.twitterId,
+      },
+    });
+
+    let isNewUser = false;
+
+    if (!user && userData.email) {
+      // Try to find by email if Twitter ID not found
+      user = await User.findOne({
+        where: {
+          email: { [Op.iLike]: userData.email },
+        },
+      });
+
+      if (user) {
+        // User exists with email, update Twitter ID
+        user.twitterId = userData.twitterId;
+        user.profilePicture = userData.profilePicture || user.profilePicture;
+        await user.save();
+      }
+    }
+
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        email: userData.email,
+        username: userData.username,
+        twitterId: userData.twitterId,
+        profilePicture: userData.profilePicture,
+        signup_channel: "twitter",
+        verified: true, // Twitter accounts are considered verified
+        role: "seeker",
+      });
+      isNewUser = true;
+    }
+
+    // Add isNewUser flag to the user object
+    user.isNewUser = isNewUser;
+    return user;
+  } catch (error) {
+    console.error("Error in findOrCreateTwitterUser:", error);
+    throw error;
+  }
+}
+
+/**
+ * Finds or creates a user for Facebook OAuth.
+ * @param {Object} userData - The user data from Facebook.
+ * @returns {Promise<User>} - The user with isNewUser flag.
+ */
+async function findOrCreateFacebookUser(userData) {
+  try {
+    // First try to find user by Facebook ID
+    let user = await User.findOne({
+      where: {
+        facebookId: userData.facebookId,
+      },
+    });
+
+    let isNewUser = false;
+
+    if (!user && userData.email) {
+      // Try to find by email if Facebook ID not found
+      user = await User.findOne({
+        where: {
+          email: { [Op.iLike]: userData.email },
+        },
+      });
+
+      if (user) {
+        // User exists with email, update Facebook ID
+        user.facebookId = userData.facebookId;
+        user.profilePicture = userData.profilePicture || user.profilePicture;
+        await user.save();
+      }
+    }
+
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        email: userData.email,
+        username: userData.username,
+        facebookId: userData.facebookId,
+        profilePicture: userData.profilePicture,
+        signup_channel: "facebook",
+        verified: true, // Facebook accounts are considered verified
+        role: "seeker",
+      });
+      isNewUser = true;
+    }
+
+    // Add isNewUser flag to the user object
+    user.isNewUser = isNewUser;
+    return user;
+  } catch (error) {
+    console.error("Error in findOrCreateFacebookUser:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   createUser,
   findUserByEmail,
@@ -136,5 +293,7 @@ module.exports = {
   findRefreshToken,
   updateUser,
   getAllUsersWithProfiles,
-  getAllUsersWithProfiles,
+  findOrCreateGoogleUser,
+  findOrCreateTwitterUser,
+  findOrCreateFacebookUser,
 };

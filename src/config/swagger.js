@@ -14,6 +14,10 @@ const options = {
     },
     servers: [
       {
+        url: "https://sheltax-backend.onrender.com/v1/api",
+        description: "Production server",
+      },
+      {
         url: "http://localhost:7000/v1/api",
         description: "Development server",
       },

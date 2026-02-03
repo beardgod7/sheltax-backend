@@ -32,8 +32,6 @@
  *           type: string
  *         profilePicture:
  *           type: string
- *         isVerified:
- *           type: boolean
  *         isComplete:
  *           type: boolean
  *         createdAt:
@@ -43,7 +41,7 @@
  *           type: string
  *           format: date-time
  *
- *     AgentProfile:
+ *     BrokerProfile:
  *       type: object
  *       properties:
  *         id:
@@ -69,14 +67,16 @@
  *         dateOfBirth:
  *           type: string
  *           format: date
+ *         ninVerification:
+ *           type: string
  *         profilePicture:
  *           type: string
  *         agencyCompanyName:
  *           type: string
- *           description: Agency/Company Name (if applicable)
- *         agentLicense:
+ *           description: Agency/Company Name (Optional)
+ *         agentLicenseNumber:
  *           type: string
- *           description: Agent License (Optional)
+ *           description: Agent License Number (Optional)
  *         yearsOfExperience:
  *           type: integer
  *         specialization:
@@ -87,12 +87,22 @@
  *           type: string
  *         linkedinProfile:
  *           type: string
+ *         address:
+ *           type: string
+ *         city:
+ *           type: string
+ *         state:
+ *           type: string
+ *         zipCode:
+ *           type: string
  *         averageRating:
  *           type: number
  *           format: float
  *         totalReviews:
  *           type: integer
  *         isVerified:
+ *           type: boolean
+ *         isActive:
  *           type: boolean
  *         isComplete:
  *           type: boolean
@@ -129,11 +139,14 @@
  *         dateOfBirth:
  *           type: string
  *           format: date
+ *         ninVerification:
+ *           type: string
  *         profilePicture:
  *           type: string
  *         ownerType:
  *           type: string
  *           enum: [individual, company, investment_group]
+ *           description: Required - Type of owner
  *         companyName:
  *           type: string
  *         businessRegistrationNumber:
@@ -141,6 +154,14 @@
  *         bio:
  *           type: string
  *         website:
+ *           type: string
+ *         address:
+ *           type: string
+ *         city:
+ *           type: string
+ *         state:
+ *           type: string
+ *         zipCode:
  *           type: string
  *         totalProperties:
  *           type: integer
@@ -153,6 +174,8 @@
  *           type: integer
  *         isVerified:
  *           type: boolean
+ *         isActive:
+ *           type: boolean
  *         isComplete:
  *           type: boolean
  *         createdAt:
@@ -162,40 +185,51 @@
  *           type: string
  *           format: date-time
  *
- * /profile:
- *   post:
- *     summary: Create user profile (role-specific)
- *     tags: [Profile]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             oneOf:
- *               - $ref: '#/components/schemas/SeekerProfile'
- *               - $ref: '#/components/schemas/AgentProfile'
- *               - $ref: '#/components/schemas/OwnerProfile'
- *             discriminator:
- *               propertyName: role
- *     responses:
- *       201:
- *         description: Profile created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 profile:
- *                   type: object
- *       409:
- *         description: Profile already exists
+ *     SeekerPreference:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         profileId:
+ *           type: string
+ *           format: uuid
+ *         preferredPropertyType:
+ *           type: string
+ *           enum: [apartment, house, condo, townhouse, studio, any]
+ *         preferredLocation:
+ *           type: string
+ *         budgetMin:
+ *           type: number
+ *         budgetMax:
+ *           type: number
+ *         preferredBedrooms:
+ *           type: integer
+ *         preferredBathrooms:
+ *           type: integer
+ *         occupation:
+ *           type: string
+ *         monthlyIncome:
+ *           type: number
+ *         employmentStatus:
+ *           type: string
+ *           enum: [employed, self_employed, unemployed, student, retired]
+ *         preferredCity:
+ *           type: string
+ *         preferredState:
+ *           type: string
+ *         preferredZipCode:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  *
- *   put:
- *     summary: Update user profile
+ * /profile/seeker:
+ *   post:
+ *     summary: Create seeker profile
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
@@ -205,7 +239,321 @@
  *         application/json:
  *           schema:
  *             type: object
- *             description: Profile fields to update (varies by user role)
+ *             required:
+ *               - firstName
+ *               - surname
+ *               - phoneNumber
+ *               - emailAddress
+ *               - stateOfResidence
+ *               - gender
+ *               - dateOfBirth
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               surname:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               emailAddress:
+ *                 type: string
+ *                 format: email
+ *               stateOfResidence:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *               ninVerification:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Seeker profile created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   $ref: '#/components/schemas/SeekerProfile'
+ *       409:
+ *         description: Profile already exists
+ *
+ * /profile/broker:
+ *   post:
+ *     summary: Create broker profile
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - surname
+ *               - phoneNumber
+ *               - emailAddress
+ *               - stateOfResidence
+ *               - gender
+ *               - dateOfBirth
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               surname:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               emailAddress:
+ *                 type: string
+ *                 format: email
+ *               stateOfResidence:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *               ninVerification:
+ *                 type: string
+ *               agencyCompanyName:
+ *                 type: string
+ *               agentLicenseNumber:
+ *                 type: string
+ *               yearsOfExperience:
+ *                 type: integer
+ *               specialization:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               linkedinProfile:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               state:
+ *                 type: string
+ *               zipCode:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Broker profile created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   $ref: '#/components/schemas/BrokerProfile'
+ *       409:
+ *         description: Broker profile already exists
+ *
+ * /profile/owner:
+ *   post:
+ *     summary: Create owner profile
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - surname
+ *               - phoneNumber
+ *               - emailAddress
+ *               - stateOfResidence
+ *               - gender
+ *               - dateOfBirth
+ *               - ownerType
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               surname:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               emailAddress:
+ *                 type: string
+ *                 format: email
+ *               stateOfResidence:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female, other]
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *               ninVerification:
+ *                 type: string
+ *               ownerType:
+ *                 type: string
+ *                 enum: [individual, company, investment_group]
+ *               companyName:
+ *                 type: string
+ *               businessRegistrationNumber:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               state:
+ *                 type: string
+ *               zipCode:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Owner profile created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   $ref: '#/components/schemas/OwnerProfile'
+ *       409:
+ *         description: Owner profile already exists
+ *
+ * /profile/seeker/preferences:
+ *   post:
+ *     summary: Create seeker preferences
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               preferredPropertyType:
+ *                 type: string
+ *                 enum: [apartment, house, condo, townhouse, studio, any]
+ *               preferredLocation:
+ *                 type: string
+ *               budgetMin:
+ *                 type: number
+ *               budgetMax:
+ *                 type: number
+ *               preferredBedrooms:
+ *                 type: integer
+ *               preferredBathrooms:
+ *                 type: integer
+ *               occupation:
+ *                 type: string
+ *               monthlyIncome:
+ *                 type: number
+ *               employmentStatus:
+ *                 type: string
+ *                 enum: [employed, self_employed, unemployed, student, retired]
+ *               preferredCity:
+ *                 type: string
+ *               preferredState:
+ *                 type: string
+ *               preferredZipCode:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Seeker preferences created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 preferences:
+ *                   $ref: '#/components/schemas/SeekerPreference'
+ *       404:
+ *         description: Seeker profile not found
+ *
+ *   put:
+ *     summary: Update seeker preferences
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               preferredPropertyType:
+ *                 type: string
+ *                 enum: [apartment, house, condo, townhouse, studio, any]
+ *               preferredLocation:
+ *                 type: string
+ *               budgetMin:
+ *                 type: number
+ *               budgetMax:
+ *                 type: number
+ *               preferredBedrooms:
+ *                 type: integer
+ *               preferredBathrooms:
+ *                 type: integer
+ *               occupation:
+ *                 type: string
+ *               monthlyIncome:
+ *                 type: number
+ *               employmentStatus:
+ *                 type: string
+ *                 enum: [employed, self_employed, unemployed, student, retired]
+ *               preferredCity:
+ *                 type: string
+ *               preferredState:
+ *                 type: string
+ *               preferredZipCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Seeker preferences updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 preferences:
+ *                   $ref: '#/components/schemas/SeekerPreference'
+ *       404:
+ *         description: Seeker profile not found
+ *
+ * * /profile:
+ *   put:
+ *     summary: Update user profile (works for all profile types)
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Profile fields to update (varies by user role - seeker/broker/owner)
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -227,7 +575,7 @@
  *         name: role
  *         schema:
  *           type: string
- *           enum: [agent, owner, seeker]
+ *           enum: [broker, owner, seeker]
  *         description: Filter by user role
  *       - in: query
  *         name: isVerified
@@ -274,7 +622,7 @@
  *                 profile:
  *                   oneOf:
  *                     - $ref: '#/components/schemas/SeekerProfile'
- *                     - $ref: '#/components/schemas/AgentProfile'
+ *                     - $ref: '#/components/schemas/BrokerProfile'
  *                     - $ref: '#/components/schemas/OwnerProfile'
  *       404:
  *         description: Profile not found
@@ -291,12 +639,12 @@
  *           type: string
  *           format: uuid
  *       - in: query
- *         name: role
+ *         name: type
  *         required: true
  *         schema:
  *           type: string
- *           enum: [agent, owner, seeker]
- *         description: User role (required to determine profile type)
+ *           enum: [broker, owner, seeker]
+ *         description: Profile type (required to determine profile type)
  *     responses:
  *       200:
  *         description: Profile retrieved successfully
@@ -311,7 +659,7 @@
  *                   type: object
  *                   description: Public profile data (sensitive info excluded)
  *       400:
- *         description: Valid role parameter is required
+ *         description: Valid type parameter is required
  *       404:
  *         description: Profile not found
  *
@@ -325,7 +673,7 @@
  *         required: true
  *         schema:
  *           type: string
- *           enum: [agent, owner, seeker]
+ *           enum: [broker, owner, seeker]
  *       - in: query
  *         name: state
  *         schema:
@@ -345,7 +693,7 @@
  *         name: minRating
  *         schema:
  *           type: number
- *         description: Minimum rating filter (for agents)
+ *         description: Minimum rating filter (for brokers)
  *       - in: query
  *         name: budgetMin
  *         schema:
@@ -447,7 +795,7 @@
  *                 type: boolean
  *               role:
  *                 type: string
- *                 enum: [agent, owner, seeker]
+ *                 enum: [broker, owner, seeker]
  *                 description: User role (required to determine profile type)
  *     responses:
  *       200:

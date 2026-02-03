@@ -130,13 +130,55 @@ const options = {
         name: "Profile",
         description: "User profile management endpoints",
       },
+      {
+        name: "Rental Properties",
+        description: "Rental property management endpoints",
+      },
+      {
+        name: "Rental Inquiries",
+        description: "Rental property inquiry endpoints",
+      },
+      {
+        name: "Rental Favorites",
+        description: "Rental property favorites endpoints",
+      },
+      {
+        name: "Sale Properties",
+        description: "Sale property management endpoints",
+      },
+      {
+        name: "Sale Inquiries",
+        description: "Sale property inquiry endpoints",
+      },
+      {
+        name: "Sale Favorites",
+        description: "Sale property favorites endpoints",
+      },
+      {
+        name: "Shortlet Properties",
+        description: "Shortlet property management endpoints",
+      },
+      {
+        name: "Shortlet Inquiries",
+        description: "Shortlet property inquiry endpoints",
+      },
+      {
+        name: "Shortlet Favorites",
+        description: "Shortlet property favorites endpoints",
+      },
     ],
   },
   apis: [
     "./src/docs/auth.swagger.js",
     "./src/docs/profile.swagger.js",
+    "./src/docs/rent.swagger.js",
+    "./src/docs/buy.swagger.js",
+    "./src/docs/shortlet.swagger.js",
     "./src/features/Authentication/routes.js",
     "./src/features/Profile/routes.js",
+    "./src/features/Rent/routes.js",
+    "./src/features/Buy/routes.js",
+    "./src/features/Shortlet/routes.js",
   ],
 };
 

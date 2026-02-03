@@ -1,36 +1,61 @@
 const {
   createProfile,
+  createBrokerProfile,
+  createOwnerProfile,
+  createSeekerPreference,
+  createUserActivity,
   findProfileByUserId,
+  findBrokerProfileByUserId,
+  findOwnerProfileByUserId,
   findProfileById,
+  findBrokerProfileById,
+  findOwnerProfileById,
   updateProfile,
+  updateBrokerProfile,
+  updateOwnerProfile,
+  updateSeekerPreference,
+  updateUserActivity,
   deleteProfile,
   getAllProfiles,
-  getProfilesByRole,
+  getAllBrokerProfiles,
+  getAllOwnerProfiles,
   updateVerificationStatus,
+  updateBrokerVerificationStatus,
+  updateOwnerVerificationStatus,
   checkProfileCompletion,
+  checkBrokerProfileCompletion,
+  checkOwnerProfileCompletion,
   searchProfiles,
+  searchBrokerProfiles,
+  searchOwnerProfiles,
+  incrementActivity,
 } = require("./repository");
 
 const {
-  getProfileSchema,
+  createProfileSchema,
+  updateProfileSchema,
+  createBrokerProfileSchema,
+  updateBrokerProfileSchema,
+  createOwnerProfileSchema,
+  updateOwnerProfileSchema,
+  createSeekerPreferenceSchema,
+  updateSeekerPreferenceSchema,
+  updateUserActivitySchema,
   profilePictureSchema,
   verificationDocumentsSchema,
 } = require("./schema");
 
 /**
- * Create a new profile
+ * Create a new seeker profile
  */
-async function createUserProfile(req, res) {
+async function createSeekerProfile(req, res) {
   try {
-    const userId = req.user.id; // From authentication middleware
-    const userRole = req.user.role; // Get user role from token
+    const userId = req.user.id;
     
-    // Get the appropriate schema for the user's role
-    const schema = getProfileSchema(userRole, 'create');
-    const validatedData = await schema.validateAsync(req.body);
+    const validatedData = await createProfileSchema.validateAsync(req.body);
 
     // Check if profile already exists
-    const existingProfile = await findProfileByUserId(userId, userRole);
+    const existingProfile = await findProfileByUserId(userId);
     if (existingProfile) {
       return res.status(409).json({
         message: "Profile already exists for this user",
@@ -38,22 +63,21 @@ async function createUserProfile(req, res) {
     }
 
     // Check profile completion
-    const isComplete = checkProfileCompletion(validatedData, userRole);
+    const isComplete = checkProfileCompletion(validatedData);
 
     const profileData = {
       ...validatedData,
-      userId,
       isComplete,
     };
 
-    const newProfile = await createProfile(profileData, userRole);
+    const newProfile = await createProfile(profileData, userId);
 
     return res.status(201).json({
-      message: "Profile created successfully",
+      message: "Seeker profile created successfully",
       profile: newProfile,
     });
   } catch (error) {
-    console.error("Error creating profile:", error);
+    console.error("Error creating seeker profile:", error);
     if (error.isJoi) {
       return res.status(400).json({
         message: "Validation error",
@@ -68,14 +92,199 @@ async function createUserProfile(req, res) {
 }
 
 /**
- * Get user's own profile
+ * Create a new broker profile
+ */
+async function createBrokerProfileHandler(req, res) {
+  try {
+    const userId = req.user.id;
+    
+    const validatedData = await createBrokerProfileSchema.validateAsync(req.body);
+
+    // Check if profile already exists
+    const existingProfile = await findBrokerProfileByUserId(userId);
+    if (existingProfile) {
+      return res.status(409).json({
+        message: "Broker profile already exists for this user",
+      });
+    }
+
+    // Check profile completion
+    const isComplete = checkBrokerProfileCompletion(validatedData);
+
+    const profileData = {
+      ...validatedData,
+      isComplete,
+    };
+
+    const newProfile = await createBrokerProfile(profileData, userId);
+
+    return res.status(201).json({
+      message: "Broker profile created successfully",
+      profile: newProfile,
+    });
+  } catch (error) {
+    console.error("Error creating broker profile:", error);
+    if (error.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.details.map(detail => detail.message),
+      });
+    }
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * Create a new owner profile
+ */
+async function createOwnerProfileHandler(req, res) {
+  try {
+    const userId = req.user.id;
+    
+    const validatedData = await createOwnerProfileSchema.validateAsync(req.body);
+
+    // Check if profile already exists
+    const existingProfile = await findOwnerProfileByUserId(userId);
+    if (existingProfile) {
+      return res.status(409).json({
+        message: "Owner profile already exists for this user",
+      });
+    }
+
+    // Check profile completion
+    const isComplete = checkOwnerProfileCompletion(validatedData);
+
+    const profileData = {
+      ...validatedData,
+      isComplete,
+    };
+
+    const newProfile = await createOwnerProfile(profileData, userId);
+
+    return res.status(201).json({
+      message: "Owner profile created successfully",
+      profile: newProfile,
+    });
+  } catch (error) {
+    console.error("Error creating owner profile:", error);
+    if (error.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.details.map(detail => detail.message),
+      });
+    }
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * Create seeker preferences
+ */
+async function createSeekerPreferences(req, res) {
+  try {
+    const userId = req.user.id;
+    
+    const validatedData = await createSeekerPreferenceSchema.validateAsync(req.body);
+
+    // Find the seeker's profile
+    const profile = await findProfileByUserId(userId);
+    if (!profile) {
+      return res.status(404).json({
+        message: "Seeker profile not found. Please create a profile first.",
+      });
+    }
+
+    const preferences = await createSeekerPreference(validatedData, profile.id);
+
+    return res.status(201).json({
+      message: "Seeker preferences created successfully",
+      preferences,
+    });
+  } catch (error) {
+    console.error("Error creating seeker preferences:", error);
+    if (error.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.details.map(detail => detail.message),
+      });
+    }
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * Update seeker preferences
+ */
+async function updateSeekerPreferences(req, res) {
+  try {
+    const userId = req.user.id;
+    
+    const validatedData = await updateSeekerPreferenceSchema.validateAsync(req.body);
+
+    // Find the seeker's profile
+    const profile = await findProfileByUserId(userId);
+    if (!profile) {
+      return res.status(404).json({
+        message: "Seeker profile not found",
+      });
+    }
+
+    const updatedPreferences = await updateSeekerPreference(profile.id, validatedData);
+
+    return res.status(200).json({
+      message: "Seeker preferences updated successfully",
+      preferences: updatedPreferences,
+    });
+  } catch (error) {
+    console.error("Error updating seeker preferences:", error);
+    if (error.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.details.map(detail => detail.message),
+      });
+    }
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}
+/**
+ * Get user's own profile (works for all profile types)
  */
 async function getMyProfile(req, res) {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    const profile = await findProfileByUserId(userId, userRole);
+    let profile = null;
+
+    // Get profile based on user role
+    switch (userRole) {
+      case 'seeker':
+        profile = await findProfileByUserId(userId);
+        break;
+      case 'broker':
+        profile = await findBrokerProfileByUserId(userId);
+        break;
+      case 'owner':
+        profile = await findOwnerProfileByUserId(userId);
+        break;
+      default:
+        return res.status(400).json({
+          message: "Invalid user role",
+        });
+    }
+
     if (!profile) {
       return res.status(404).json({
         message: "Profile not found",
@@ -101,15 +310,29 @@ async function getMyProfile(req, res) {
 async function getProfileById(req, res) {
   try {
     const { id } = req.params;
-    const { role } = req.query; // Role should be provided as query parameter
+    const { type } = req.query; // Profile type: seeker, broker, owner
 
-    if (!role || !["agent", "owner", "seeker"].includes(role)) {
+    if (!type || !["seeker", "broker", "owner"].includes(type)) {
       return res.status(400).json({
-        message: "Valid role parameter is required (agent, owner, or seeker)",
+        message: "Valid type parameter is required (seeker, broker, or owner)",
       });
     }
 
-    const profile = await findProfileById(id, role);
+    let profile = null;
+
+    // Get profile based on type
+    switch (type) {
+      case 'seeker':
+        profile = await findProfileById(id);
+        break;
+      case 'broker':
+        profile = await findBrokerProfileById(id);
+        break;
+      case 'owner':
+        profile = await findOwnerProfileById(id);
+        break;
+    }
+
     if (!profile) {
       return res.status(404).json({
         message: "Profile not found",
@@ -122,8 +345,7 @@ async function getProfileById(req, res) {
       firstName: profile.firstName,
       surname: profile.surname,
       profilePicture: profile.profilePicture,
-      city: profile.city,
-      state: profile.state,
+      stateOfResidence: profile.stateOfResidence,
       isVerified: profile.isVerified,
       user: {
         role: profile.user.role,
@@ -131,9 +353,10 @@ async function getProfileById(req, res) {
       createdAt: profile.createdAt,
     };
 
-    // Add role-specific public fields
-    if (role === "agent") {
-      publicProfile.companyName = profile.companyName;
+    // Add type-specific public fields
+    if (type === "broker") {
+      publicProfile.agencyCompanyName = profile.agencyCompanyName;
+      publicProfile.agentLicenseNumber = profile.agentLicenseNumber;
       publicProfile.yearsOfExperience = profile.yearsOfExperience;
       publicProfile.specialization = profile.specialization;
       publicProfile.bio = profile.bio;
@@ -141,7 +364,9 @@ async function getProfileById(req, res) {
       publicProfile.linkedinProfile = profile.linkedinProfile;
       publicProfile.averageRating = profile.averageRating;
       publicProfile.totalReviews = profile.totalReviews;
-    } else if (role === "owner") {
+      publicProfile.city = profile.city;
+      publicProfile.state = profile.state;
+    } else if (type === "owner") {
       publicProfile.companyName = profile.companyName;
       publicProfile.ownerType = profile.ownerType;
       publicProfile.bio = profile.bio;
@@ -150,6 +375,8 @@ async function getProfileById(req, res) {
       publicProfile.activeListings = profile.activeListings;
       publicProfile.averageRating = profile.averageRating;
       publicProfile.totalReviews = profile.totalReviews;
+      publicProfile.city = profile.city;
+      publicProfile.state = profile.state;
     }
     // For seekers, only basic info is public
 
@@ -167,34 +394,53 @@ async function getProfileById(req, res) {
 }
 
 /**
- * Update user's profile
+ * Update user's profile (works for all profile types)
  */
 async function updateUserProfile(req, res) {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
     
-    // Get the appropriate schema for the user's role
-    const schema = getProfileSchema(userRole, 'update');
-    const validatedData = await schema.validateAsync(req.body);
+    let validatedData, existingProfile, updatedProfile;
 
-    const existingProfile = await findProfileByUserId(userId, userRole);
-    if (!existingProfile) {
-      return res.status(404).json({
-        message: "Profile not found",
-      });
+    // Handle different profile types
+    switch (userRole) {
+      case 'seeker':
+        validatedData = await updateProfileSchema.validateAsync(req.body);
+        existingProfile = await findProfileByUserId(userId);
+        if (!existingProfile) {
+          return res.status(404).json({ message: "Seeker profile not found" });
+        }
+        const mergedSeekerData = { ...existingProfile.toJSON(), ...validatedData };
+        const seekerIsComplete = checkProfileCompletion(mergedSeekerData);
+        updatedProfile = await updateProfile(userId, { ...validatedData, isComplete: seekerIsComplete });
+        break;
+
+      case 'broker':
+        validatedData = await updateBrokerProfileSchema.validateAsync(req.body);
+        existingProfile = await findBrokerProfileByUserId(userId);
+        if (!existingProfile) {
+          return res.status(404).json({ message: "Broker profile not found" });
+        }
+        const mergedBrokerData = { ...existingProfile.toJSON(), ...validatedData };
+        const brokerIsComplete = checkBrokerProfileCompletion(mergedBrokerData);
+        updatedProfile = await updateBrokerProfile(userId, { ...validatedData, isComplete: brokerIsComplete });
+        break;
+
+      case 'owner':
+        validatedData = await updateOwnerProfileSchema.validateAsync(req.body);
+        existingProfile = await findOwnerProfileByUserId(userId);
+        if (!existingProfile) {
+          return res.status(404).json({ message: "Owner profile not found" });
+        }
+        const mergedOwnerData = { ...existingProfile.toJSON(), ...validatedData };
+        const ownerIsComplete = checkOwnerProfileCompletion(mergedOwnerData);
+        updatedProfile = await updateOwnerProfile(userId, { ...validatedData, isComplete: ownerIsComplete });
+        break;
+
+      default:
+        return res.status(400).json({ message: "Invalid user role" });
     }
-
-    // Check profile completion after update
-    const mergedData = { ...existingProfile.toJSON(), ...validatedData };
-    const isComplete = checkProfileCompletion(mergedData, userRole);
-
-    const updateData = {
-      ...validatedData,
-      isComplete,
-    };
-
-    const updatedProfile = await updateProfile(userId, updateData, userRole);
 
     return res.status(200).json({
       message: "Profile updated successfully",
@@ -428,7 +674,11 @@ async function uploadVerificationDocuments(req, res) {
 }
 
 module.exports = {
-  createUserProfile,
+  createSeekerProfile,
+  createBrokerProfileHandler,
+  createOwnerProfileHandler,
+  createSeekerPreferences,
+  updateSeekerPreferences,
   getMyProfile,
   getProfileById,
   updateUserProfile,

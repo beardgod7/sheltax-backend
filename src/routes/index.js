@@ -3,6 +3,9 @@ const express = require("express");
 // Import feature routes
 const authRoutes = require("../features/Authentication/routes");
 const profileRoutes = require("../features/Profile/routes");
+const rentRoutes = require("../features/Rent/routes");
+const buyRoutes = require("../features/Buy/routes");
+const shortletRoutes = require("../features/Shortlet/routes");
 
 const router = express.Router();
 
@@ -18,6 +21,9 @@ router.get("/health", (req, res) => {
 // Feature routes
 router.use("/auth", authRoutes);
 router.use("/profile", profileRoutes);
+router.use("/rent", rentRoutes);
+router.use("/buy", buyRoutes);
+router.use("/shortlet", shortletRoutes);
 
 // Catch-all for undefined routes
 router.use("*", (req, res) => {

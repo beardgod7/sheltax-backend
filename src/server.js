@@ -16,10 +16,10 @@ process.on("SIGINT", () => {
   });
 });
 
-process.on("SIGTERM", () => {
-  console.log("Shutting down server...");
-  server.close(() => {
-    console.log("Server closed gracefully.");
-    process.exit(0);
-  });
-});
+// process.on("SIGTERM", () => {
+//   console.log("Shutting down server...");
+//   server.close(() => {
+//     console.log("Server closed gracefully.");
+//     process.exit(0);
+//   });
+// });

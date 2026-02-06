@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const shortletController = require("./controller");
 const { authenticate } = require("../../middleware/authentication");
-const { authorizeRoles } = require("../../middleware/rolemiddleware");
+const { authorize } = require("../../middleware/rolemiddleware");
 
 // Public routes (no authentication required)
 router.get("/search", shortletController.searchShortletProperties);
@@ -16,28 +16,28 @@ router.use(authenticate);
 // Create shortlet property (Owner/Broker only)
 router.post(
   "/",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   shortletController.createShortletProperty
 );
 
 // Get user's shortlet properties (Owner/Broker only)
 router.get(
   "/my/properties",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   shortletController.getMyShortletProperties
 );
 
 // Update shortlet property (Owner/Broker only)
 router.put(
   "/:id",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   shortletController.updateShortletProperty
 );
 
 // Delete shortlet property (Owner/Broker only)
 router.delete(
   "/:id",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   shortletController.deleteShortletProperty
 );
 
@@ -46,28 +46,28 @@ router.delete(
 // Create inquiry for a property (Seeker only)
 router.post(
   "/:id/inquiries",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   shortletController.createShortletInquiry
 );
 
 // Get inquiries for a property (Owner/Broker only)
 router.get(
   "/:id/inquiries",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   shortletController.getPropertyInquiries
 );
 
 // Get user's inquiries (Seeker only)
 router.get(
   "/my/inquiries",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   shortletController.getMyInquiries
 );
 
 // Respond to inquiry (Owner/Broker only)
 router.put(
   "/inquiries/:inquiryId/respond",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   shortletController.respondToInquiry
 );
 
@@ -76,28 +76,28 @@ router.put(
 // Add property to favorites (Seeker only)
 router.post(
   "/:id/favorites",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   shortletController.addToFavorites
 );
 
 // Remove property from favorites (Seeker only)
 router.delete(
   "/:id/favorites",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   shortletController.removeFromFavorites
 );
 
 // Get user's favorite properties (Seeker only)
 router.get(
   "/my/favorites",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   shortletController.getMyFavorites
 );
 
 // Check if property is favorited (Seeker only)
 router.get(
   "/:id/favorites/status",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   shortletController.checkFavoriteStatus
 );
 
@@ -106,7 +106,7 @@ router.get(
 // Verify shortlet property (Admin only)
 router.put(
   "/:id/verify",
-  authorizeRoles(["admin"]),
+  authorize(["admin"]),
   shortletController.verifyShortletProperty
 );
 

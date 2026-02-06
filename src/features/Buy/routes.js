@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const saleController = require("./controller");
 const { authenticate } = require("../../middleware/authentication");
-const { authorizeRoles } = require("../../middleware/rolemiddleware");
+const { authorize } = require("../../middleware/rolemiddleware");
 
 // Public routes (no authentication required)
 router.get("/search", saleController.searchSaleProperties);
@@ -16,28 +16,28 @@ router.use(authenticate);
 // Create sale property (Owner/Broker only)
 router.post(
   "/",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   saleController.createSaleProperty
 );
 
 // Get user's sale properties (Owner/Broker only)
 router.get(
   "/my/properties",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   saleController.getMySaleProperties
 );
 
 // Update sale property (Owner/Broker only)
 router.put(
   "/:id",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   saleController.updateSaleProperty
 );
 
 // Delete sale property (Owner/Broker only)
 router.delete(
   "/:id",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   saleController.deleteSaleProperty
 );
 
@@ -46,28 +46,28 @@ router.delete(
 // Create inquiry for a property (Seeker only)
 router.post(
   "/:id/inquiries",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   saleController.createSaleInquiry
 );
 
 // Get inquiries for a property (Owner/Broker only)
 router.get(
   "/:id/inquiries",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   saleController.getPropertyInquiries
 );
 
 // Get user's inquiries (Seeker only)
 router.get(
   "/my/inquiries",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   saleController.getMyInquiries
 );
 
 // Respond to inquiry (Owner/Broker only)
 router.put(
   "/inquiries/:inquiryId/respond",
-  authorizeRoles(["owner", "broker"]),
+  authorize(["owner", "broker"]),
   saleController.respondToInquiry
 );
 
@@ -76,28 +76,28 @@ router.put(
 // Add property to favorites (Seeker only)
 router.post(
   "/:id/favorites",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   saleController.addToFavorites
 );
 
 // Remove property from favorites (Seeker only)
 router.delete(
   "/:id/favorites",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   saleController.removeFromFavorites
 );
 
 // Get user's favorite properties (Seeker only)
 router.get(
   "/my/favorites",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   saleController.getMyFavorites
 );
 
 // Check if property is favorited (Seeker only)
 router.get(
   "/:id/favorites/status",
-  authorizeRoles(["seeker"]),
+  authorize(["seeker"]),
   saleController.checkFavoriteStatus
 );
 
@@ -106,7 +106,7 @@ router.get(
 // Verify sale property (Admin only)
 router.put(
   "/:id/verify",
-  authorizeRoles(["admin"]),
+  authorize(["admin"]),
   saleController.verifySaleProperty
 );
 

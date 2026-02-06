@@ -541,7 +541,7 @@
  *       404:
  *         description: Seeker profile not found
  *
- * * /profile:
+ * /profile:
  *   put:
  *     summary: Update user profile (works for all profile types)
  *     tags: [Profile]

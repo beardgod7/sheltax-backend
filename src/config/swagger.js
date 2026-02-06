@@ -171,14 +171,14 @@ const options = {
   apis: [
     "./src/docs/auth.swagger.js",
     "./src/docs/profile.swagger.js",
-    // "./src/docs/rent.swagger.js",
-    // "./src/docs/buy.swagger.js",
-    // "./src/docs/shortlet.swagger.js",
+    "./src/docs/rent.swagger.js",
+    "./src/docs/buy.swagger.js",
+    "./src/docs/shortlet.swagger.js",
     "./src/features/Authentication/routes.js",
     "./src/features/Profile/routes.js",
-    // "./src/features/Rent/routes.js",
-    // "./src/features/Buy/routes.js",
-    // "./src/features/Shortlet/routes.js",
+    "./src/features/Rent/routes.js",
+    "./src/features/Buy/routes.js",
+    "./src/features/Shortlet/routes.js",
   ],
 };
 

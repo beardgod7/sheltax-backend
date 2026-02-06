@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const rentalController = require("./controller");
-const { authenticateToken } = require("../../middleware/authentication");
+const { authenticate } = require("../../middleware/authentication");
 const { authorizeRoles } = require("../../middleware/rolemiddleware");
 
 // Public routes (no authentication required)
@@ -9,7 +9,7 @@ router.get("/search", rentalController.searchRentalProperties);
 router.get("/:id", rentalController.getRentalProperty);
 
 // Protected routes (authentication required)
-router.use(authenticateToken);
+router.use(authenticate);
 
 // PROPERTY MANAGEMENT ROUTES
 

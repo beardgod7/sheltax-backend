@@ -110,4 +110,11 @@ router.put(
   rentalController.verifyRentalProperty
 );
 
+// Update listing status (Admin only)
+router.put(
+  "/:id/listing-status",
+  authorize(["admin"]),
+  rentalController.updateListingStatus
+);
+
 module.exports = router;

@@ -64,6 +64,7 @@ class SaleRepository {
         isVerified,
         isFeatured,
         status,
+        listingStatus,
         tag,
         sortBy = "createdAt",
         sortOrder = "desc",
@@ -170,6 +171,9 @@ class SaleRepository {
       if (status) {
         whereConditions.status = status;
       }
+      if (listingStatus) {
+        whereConditions.listingStatus = listingStatus;
+      }
 
       // Tag filter
       if (tag) {
@@ -220,12 +224,17 @@ class SaleRepository {
   }
 
   // Get sale properties by owner
-  async getSalePropertiesByOwner(ownerId, page = 1, limit = 20) {
+  async getSalePropertiesByOwner(ownerId, page = 1, limit = 20, listingStatus = null) {
     try {
       const offset = (page - 1) * limit;
+      
+      const whereConditions = { ownerId };
+      if (listingStatus) {
+        whereConditions.listingStatus = listingStatus;
+      }
 
       const { count, rows } = await SaleProperty.findAndCountAll({
-        where: { ownerId },
+        where: whereConditions,
         order: [["createdAt", "DESC"]],
         limit: parseInt(limit),
         offset: parseInt(offset),
@@ -311,6 +320,28 @@ class SaleRepository {
       return property;
     } catch (error) {
       throw new Error(`Failed to verify sale property: ${error.message}`);
+    }
+  }
+
+  // Update listing status (Admin only)
+  async updateListingStatus(id, listingStatus, rejectionReason = null) {
+    try {
+      const property = await SaleProperty.findByPk(id);
+      if (!property) {
+        return null;
+      }
+
+      const updateData = { listingStatus };
+      if (listingStatus === "rejected" && rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+      } else if (listingStatus !== "rejected") {
+        updateData.rejectionReason = null;
+      }
+
+      await property.update(updateData);
+      return property;
+    } catch (error) {
+      throw new Error(`Failed to update listing status: ${error.message}`);
     }
   }
 

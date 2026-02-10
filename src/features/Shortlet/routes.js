@@ -110,4 +110,11 @@ router.put(
   shortletController.verifyShortletProperty
 );
 
+// Update listing status (Admin only)
+router.put(
+  "/:id/listing-status",
+  authorize(["admin"]),
+  shortletController.updateListingStatus
+);
+
 module.exports = router;

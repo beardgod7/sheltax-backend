@@ -6,6 +6,7 @@ const {
   respondToSaleInquirySchema,
   searchSalePropertiesSchema,
   verifySalePropertySchema,
+  updateListingStatusSchema,
 } = require("./schema");
 
 class SaleController {
@@ -103,11 +104,12 @@ class SaleController {
   // Get user's sale properties
   async getMySaleProperties(req, res) {
     try {
-      const { page = 1, limit = 20 } = req.query;
+      const { page = 1, limit = 20, listingStatus } = req.query;
       const result = await saleRepository.getSalePropertiesByOwner(
         req.user.id,
         parseInt(page),
-        parseInt(limit)
+        parseInt(limit),
+        listingStatus
       );
 
       res.json({
@@ -230,6 +232,48 @@ class SaleController {
       res.status(500).json({
         success: false,
         message: "Failed to verify sale property",
+        error: error.message,
+      });
+    }
+  }
+
+  // Update listing status (Admin only)
+  async updateListingStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { error, value } = updateListingStatusSchema.validate(req.body);
+      
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation error",
+          errors: error.details.map((detail) => detail.message),
+        });
+      }
+
+      const property = await saleRepository.updateListingStatus(
+        id,
+        value.listingStatus,
+        value.rejectionReason
+      );
+
+      if (!property) {
+        return res.status(404).json({
+          success: false,
+          message: "Sale property not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Listing status updated to ${value.listingStatus} successfully`,
+        data: property,
+      });
+    } catch (error) {
+      console.error("Update listing status error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update listing status",
         error: error.message,
       });
     }

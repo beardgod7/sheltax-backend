@@ -103,6 +103,10 @@ const updateRentalPropertySchema = Joi.object({
   status: Joi.string()
     .valid("active", "rented", "inactive", "under_review")
     .optional(),
+  listingStatus: Joi.string()
+    .valid("pending", "active", "rejected", "expired")
+    .optional(),
+  rejectionReason: Joi.string().max(500).optional(),
   isAvailable: Joi.boolean().optional(),
   availableFrom: Joi.date().optional(),
   isFeatured: Joi.boolean().optional(),
@@ -189,6 +193,9 @@ const searchRentalPropertiesSchema = Joi.object({
   status: Joi.string()
     .valid("active", "rented", "inactive", "under_review")
     .optional(),
+  listingStatus: Joi.string()
+    .valid("pending", "active", "rejected", "expired")
+    .optional(),
   
   // Tag filter
   tag: Joi.string()
@@ -217,6 +224,24 @@ const verifyRentalPropertySchema = Joi.object({
   }),
 });
 
+// Listing approval/rejection schema (Admin only)
+const updateListingStatusSchema = Joi.object({
+  listingStatus: Joi.string()
+    .valid("active", "rejected", "expired")
+    .required()
+    .messages({
+      "any.only": "Listing status must be one of: active, rejected, expired",
+      "any.required": "Listing status is required",
+    }),
+  rejectionReason: Joi.string().max(500).when("listingStatus", {
+    is: "rejected",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }).messages({
+    "any.required": "Rejection reason is required when rejecting a listing",
+  }),
+});
+
 module.exports = {
   createRentalPropertySchema,
   updateRentalPropertySchema,
@@ -224,4 +249,5 @@ module.exports = {
   respondToInquirySchema,
   searchRentalPropertiesSchema,
   verifyRentalPropertySchema,
+  updateListingStatusSchema,
 };

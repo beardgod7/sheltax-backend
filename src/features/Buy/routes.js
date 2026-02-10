@@ -110,4 +110,11 @@ router.put(
   saleController.verifySaleProperty
 );
 
+// Update listing status (Admin only)
+router.put(
+  "/:id/listing-status",
+  authorize(["admin"]),
+  saleController.updateListingStatus
+);
+
 module.exports = router;

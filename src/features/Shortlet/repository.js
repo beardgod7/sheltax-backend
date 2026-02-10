@@ -65,6 +65,7 @@ class ShortletRepository {
         isVerified,
         isFeatured,
         status,
+        listingStatus,
         tag,
         availableFrom,
         availableTo,
@@ -197,6 +198,9 @@ class ShortletRepository {
       if (status) {
         whereConditions.status = status;
       }
+      if (listingStatus) {
+        whereConditions.listingStatus = listingStatus;
+      }
 
       // Tag filter
       if (tag) {
@@ -247,12 +251,17 @@ class ShortletRepository {
   }
 
   // Get shortlet properties by owner
-  async getShortletPropertiesByOwner(ownerId, page = 1, limit = 20) {
+  async getShortletPropertiesByOwner(ownerId, page = 1, limit = 20, listingStatus = null) {
     try {
       const offset = (page - 1) * limit;
+      
+      const whereConditions = { ownerId };
+      if (listingStatus) {
+        whereConditions.listingStatus = listingStatus;
+      }
 
       const { count, rows } = await ShortletProperty.findAndCountAll({
-        where: { ownerId },
+        where: whereConditions,
         order: [["createdAt", "DESC"]],
         limit: parseInt(limit),
         offset: parseInt(offset),
@@ -338,6 +347,28 @@ class ShortletRepository {
       return property;
     } catch (error) {
       throw new Error(`Failed to verify shortlet property: ${error.message}`);
+    }
+  }
+
+  // Update listing status (Admin only)
+  async updateListingStatus(id, listingStatus, rejectionReason = null) {
+    try {
+      const property = await ShortletProperty.findByPk(id);
+      if (!property) {
+        return null;
+      }
+
+      const updateData = { listingStatus };
+      if (listingStatus === "rejected" && rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+      } else if (listingStatus !== "rejected") {
+        updateData.rejectionReason = null;
+      }
+
+      await property.update(updateData);
+      return property;
+    } catch (error) {
+      throw new Error(`Failed to update listing status: ${error.message}`);
     }
   }
 

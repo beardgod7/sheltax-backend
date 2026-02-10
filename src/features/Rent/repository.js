@@ -59,6 +59,7 @@ class RentalRepository {
         isVerified,
         isFeatured,
         status,
+        listingStatus,
         availableFrom,
         tag,
         sortBy = "createdAt",
@@ -146,6 +147,9 @@ class RentalRepository {
       if (status) {
         whereConditions.status = status;
       }
+      if (listingStatus) {
+        whereConditions.listingStatus = listingStatus;
+      }
 
       // Date filters
       if (availableFrom) {
@@ -203,12 +207,17 @@ class RentalRepository {
   }
 
   // Get rental properties by owner
-  async getRentalPropertiesByOwner(ownerId, page = 1, limit = 20) {
+  async getRentalPropertiesByOwner(ownerId, page = 1, limit = 20, listingStatus = null) {
     try {
       const offset = (page - 1) * limit;
+      
+      const whereConditions = { ownerId };
+      if (listingStatus) {
+        whereConditions.listingStatus = listingStatus;
+      }
 
       const { count, rows } = await RentalProperty.findAndCountAll({
-        where: { ownerId },
+        where: whereConditions,
         order: [["createdAt", "DESC"]],
         limit: parseInt(limit),
         offset: parseInt(offset),
@@ -294,6 +303,28 @@ class RentalRepository {
       return property;
     } catch (error) {
       throw new Error(`Failed to verify rental property: ${error.message}`);
+    }
+  }
+
+  // Update listing status (Admin only)
+  async updateListingStatus(id, listingStatus, rejectionReason = null) {
+    try {
+      const property = await RentalProperty.findByPk(id);
+      if (!property) {
+        return null;
+      }
+
+      const updateData = { listingStatus };
+      if (listingStatus === "rejected" && rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+      } else if (listingStatus !== "rejected") {
+        updateData.rejectionReason = null;
+      }
+
+      await property.update(updateData);
+      return property;
+    } catch (error) {
+      throw new Error(`Failed to update listing status: ${error.message}`);
     }
   }
 

@@ -166,6 +166,14 @@ const options = {
         name: "Shortlet Favorites",
         description: "Shortlet property favorites endpoints",
       },
+      {
+        name: "Property Requests",
+        description: "Property request management endpoints",
+      },
+      {
+        name: "Property Request Responses",
+        description: "Property request response endpoints",
+      },
     ],
   },
   apis: [
@@ -174,11 +182,13 @@ const options = {
     "./src/docs/rent.swagger.js",
     "./src/docs/buy.swagger.js",
     "./src/docs/shortlet.swagger.js",
+    "./src/docs/property-request.swagger.js",
     "./src/features/Authentication/routes.js",
     "./src/features/Profile/routes.js",
     "./src/features/Rent/routes.js",
     "./src/features/Buy/routes.js",
     "./src/features/Shortlet/routes.js",
+    "./src/features/PropertyRequest/routes.js",
   ],
 };
 

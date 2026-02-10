@@ -6,6 +6,7 @@ const profileRoutes = require("../features/Profile/routes");
 const rentRoutes = require("../features/Rent/routes");
 const buyRoutes = require("../features/Buy/routes");
 const shortletRoutes = require("../features/Shortlet/routes");
+const propertyRequestRoutes = require("../features/PropertyRequest/routes");
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.use("/profile", profileRoutes);
 router.use("/rent", rentRoutes);
 router.use("/buy", buyRoutes);
 router.use("/shortlet", shortletRoutes);
+router.use("/property-requests", propertyRequestRoutes);
 
 // Catch-all for undefined routes
 router.use("*", (req, res) => {

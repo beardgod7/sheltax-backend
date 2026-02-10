@@ -178,6 +178,18 @@ const ShortletProperty = sequelize.define(
       allowNull: false,
       defaultValue: "active",
     },
+    // Listing status for admin/moderation
+    listingStatus: {
+      type: DataTypes.ENUM("pending", "active", "rejected", "expired"),
+      allowNull: false,
+      defaultValue: "pending",
+      comment: "Moderation status of the listing"
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: "Reason for rejection if listing is rejected"
+    },
     // Verification
     isVerified: {
       type: DataTypes.BOOLEAN,
@@ -217,6 +229,7 @@ const ShortletProperty = sequelize.define(
       { fields: ["bathrooms"] },
       { fields: ["maxGuests"] },
       { fields: ["status"] },
+      { fields: ["listingStatus"] },
       { fields: ["isAvailable"] },
       { fields: ["isVerified"] },
       { fields: ["isFeatured"] },

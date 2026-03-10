@@ -226,7 +226,7 @@
  *           type: boolean
  *           description: Whether there is a previous page
  *
- * /v1/api/rent/search:
+ * /rent/search:
  *   get:
  *     summary: Search and filter rental properties
  *     tags: [Rental Properties]
@@ -321,7 +321,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/rent/{id}:
+ * /rent/{id}:
  *   get:
  *     summary: Get rental property by ID
  *     tags: [Rental Properties]
@@ -348,7 +348,7 @@
  *       404:
  *         description: Property not found
  *
- * /v1/api/rent:
+ * /rent:
  *   post:
  *     summary: Create a new rental property
  *     tags: [Rental Properties]
@@ -381,7 +381,7 @@
  *       403:
  *         description: Forbidden - Owner/Broker role required
  *
- * /v1/api/rent/my/properties:
+ * /rent/my/properties:
  *   get:
  *     summary: Get user's rental properties
  *     tags: [Rental Properties]
@@ -417,7 +417,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/rent/{id}/inquiries:
+ * /rent/{id}/inquiries:
  *   post:
  *     summary: Create inquiry for a rental property
  *     tags: [Rental Inquiries]
@@ -449,7 +449,7 @@
  *       404:
  *         description: Property not found
  *
- * /v1/api/rent/{id}/favorites:
+ * /rent/{id}/favorites:
  *   post:
  *     summary: Add property to favorites
  *     tags: [Rental Favorites]

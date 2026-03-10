@@ -252,7 +252,7 @@
  *           format: date-time
  *           description: Creation timestamp
  *
- * /v1/api/shortlet/search:
+ * /shortlet/search:
  *   get:
  *     summary: Search and filter shortlet properties
  *     tags: [Shortlet Properties]
@@ -374,7 +374,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/shortlet/{id}:
+ * /shortlet/{id}:
  *   get:
  *     summary: Get shortlet property by ID
  *     tags: [Shortlet Properties]
@@ -401,7 +401,7 @@
  *       404:
  *         description: Property not found
  *
- * /v1/api/shortlet:
+ * /shortlet:
  *   post:
  *     summary: Create a new shortlet property
  *     tags: [Shortlet Properties]
@@ -434,7 +434,7 @@
  *       403:
  *         description: Forbidden - Owner/Broker role required
  *
- * /v1/api/shortlet/my/properties:
+ * /shortlet/my/properties:
  *   get:
  *     summary: Get user's shortlet properties
  *     tags: [Shortlet Properties]
@@ -470,7 +470,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/shortlet/{id}/inquiries:
+ * /shortlet/{id}/inquiries:
  *   post:
  *     summary: Create inquiry for a shortlet property
  *     tags: [Shortlet Inquiries]
@@ -502,7 +502,7 @@
  *       404:
  *         description: Property not found
  *
- * /v1/api/shortlet/{id}/favorites:
+ * /shortlet/{id}/favorites:
  *   post:
  *     summary: Add property to favorites
  *     tags: [Shortlet Favorites]

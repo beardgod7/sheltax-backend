@@ -200,7 +200,7 @@
  *           format: date-time
  *           description: Creation timestamp
  *
- * /v1/api/buy/search:
+ * /buy/search:
  *   get:
  *     summary: Search and filter sale properties
  *     tags: [Sale Properties]
@@ -301,7 +301,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/buy/{id}:
+ * /buy/{id}:
  *   get:
  *     summary: Get sale property by ID
  *     tags: [Sale Properties]
@@ -328,7 +328,7 @@
  *       404:
  *         description: Property not found
  *
- * /v1/api/buy:
+ * /buy:
  *   post:
  *     summary: Create a new sale property
  *     tags: [Sale Properties]
@@ -361,7 +361,7 @@
  *       403:
  *         description: Forbidden - Owner/Broker role required
  *
- * /v1/api/buy/my/properties:
+ * /buy/my/properties:
  *   get:
  *     summary: Get user's sale properties
  *     tags: [Sale Properties]
@@ -397,7 +397,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/buy/{id}/inquiries:
+ * /buy/{id}/inquiries:
  *   post:
  *     summary: Create inquiry for a sale property
  *     tags: [Sale Inquiries]
@@ -429,7 +429,7 @@
  *       404:
  *         description: Property not found
  *
- * /v1/api/buy/{id}/favorites:
+ * /buy/{id}/favorites:
  *   post:
  *     summary: Add property to favorites
  *     tags: [Sale Favorites]

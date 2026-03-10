@@ -171,7 +171,7 @@
  *           format: date-time
  *           description: Last update timestamp
  *
- * /v1/api/property-requests/search:
+ * /property-requests/search:
  *   get:
  *     summary: Search property requests (Brokers/Owners view all active requests)
  *     tags: [Property Requests]
@@ -263,7 +263,7 @@
  *       403:
  *         description: Forbidden - Broker/Owner role required
  *
- * /v1/api/property-requests/{id}:
+ * /property-requests/{id}:
  *   get:
  *     summary: Get property request by ID
  *     tags: [Property Requests]
@@ -292,7 +292,7 @@
  *       404:
  *         description: Property request not found
  *
- * /v1/api/property-requests:
+ * /property-requests:
  *   post:
  *     summary: Create a new property request (Seeker only)
  *     tags: [Property Requests]
@@ -364,7 +364,7 @@
  *       403:
  *         description: Forbidden - Seeker role required
  *
- * /v1/api/property-requests/my/requests:
+ * /property-requests/my/requests:
  *   get:
  *     summary: Get seeker's own property requests
  *     tags: [Property Requests]
@@ -400,7 +400,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/property-requests/{id}/responses:
+ * /property-requests/{id}/responses:
  *   post:
  *     summary: Create response to property request (Broker/Owner only)
  *     tags: [Property Request Responses]
@@ -524,7 +524,7 @@
  *       404:
  *         description: Request not found or no permission
  *
- * /v1/api/property-requests/my/responses:
+ * /property-requests/my/responses:
  *   get:
  *     summary: Get broker/owner's own responses
  *     tags: [Property Request Responses]
@@ -560,7 +560,7 @@
  *                 pagination:
  *                   $ref: '#/components/schemas/PaginationInfo'
  *
- * /v1/api/property-requests/responses/{responseId}/status:
+ * /property-requests/responses/{responseId}/status:
  *   put:
  *     summary: Update response status (Seeker updates status of responses they received)
  *     tags: [Property Request Responses]

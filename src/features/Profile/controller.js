@@ -31,6 +31,8 @@ const {
   incrementActivity,
 } = require("./repository");
 
+const { findUserById } = require("../Authentication/repository");
+
 const {
   createProfileSchema,
   updateProfileSchema,
@@ -51,43 +53,26 @@ const {
 async function createSeekerProfile(req, res) {
   try {
     const userId = req.user.sub;
-    
+
     const validatedData = await createProfileSchema.validateAsync(req.body);
 
-    // Check if profile already exists
     const existingProfile = await findProfileByUserId(userId);
     if (existingProfile) {
-      return res.status(409).json({
-        message: "Profile already exists for this user",
-      });
+      return res.status(409).json({ message: "Profile already exists for this user" });
     }
 
-    // Check profile completion
-    const isComplete = checkProfileCompletion(validatedData);
+    // Auto-populate email from User record
+    const user = await findUserById(userId);
+    const emailAddress = validatedData.emailAddress || user.email;
 
-    const profileData = {
-      ...validatedData,
-      isComplete,
-    };
+    const isComplete = checkProfileCompletion({ ...validatedData, emailAddress });
+    const newProfile = await createProfile({ ...validatedData, emailAddress, isComplete }, userId);
 
-    const newProfile = await createProfile(profileData, userId);
-
-    return res.status(201).json({
-      message: "Seeker profile created successfully",
-      profile: newProfile,
-    });
+    return res.status(201).json({ message: "Seeker profile created successfully", profile: newProfile });
   } catch (error) {
     console.error("Error creating seeker profile:", error);
-    if (error.isJoi) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: error.details.map(detail => detail.message),
-      });
-    }
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    if (error.isJoi) return res.status(400).json({ message: "Validation error", errors: error.details.map(d => d.message) });
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 }
 
@@ -97,43 +82,26 @@ async function createSeekerProfile(req, res) {
 async function createBrokerProfileHandler(req, res) {
   try {
     const userId = req.user.sub;
-    
+
     const validatedData = await createBrokerProfileSchema.validateAsync(req.body);
 
-    // Check if profile already exists
     const existingProfile = await findBrokerProfileByUserId(userId);
     if (existingProfile) {
-      return res.status(409).json({
-        message: "Broker profile already exists for this user",
-      });
+      return res.status(409).json({ message: "Broker profile already exists for this user" });
     }
 
-    // Check profile completion
-    const isComplete = checkBrokerProfileCompletion(validatedData);
+    // Auto-populate email from User record
+    const user = await findUserById(userId);
+    const emailAddress = validatedData.emailAddress || user.email;
 
-    const profileData = {
-      ...validatedData,
-      isComplete,
-    };
+    const isComplete = checkBrokerProfileCompletion({ ...validatedData, emailAddress });
+    const newProfile = await createBrokerProfile({ ...validatedData, emailAddress, isComplete }, userId);
 
-    const newProfile = await createBrokerProfile(profileData, userId);
-
-    return res.status(201).json({
-      message: "Broker profile created successfully",
-      profile: newProfile,
-    });
+    return res.status(201).json({ message: "Broker profile created successfully", profile: newProfile });
   } catch (error) {
     console.error("Error creating broker profile:", error);
-    if (error.isJoi) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: error.details.map(detail => detail.message),
-      });
-    }
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    if (error.isJoi) return res.status(400).json({ message: "Validation error", errors: error.details.map(d => d.message) });
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 }
 
@@ -143,43 +111,26 @@ async function createBrokerProfileHandler(req, res) {
 async function createOwnerProfileHandler(req, res) {
   try {
     const userId = req.user.sub;
-    
+
     const validatedData = await createOwnerProfileSchema.validateAsync(req.body);
 
-    // Check if profile already exists
     const existingProfile = await findOwnerProfileByUserId(userId);
     if (existingProfile) {
-      return res.status(409).json({
-        message: "Owner profile already exists for this user",
-      });
+      return res.status(409).json({ message: "Owner profile already exists for this user" });
     }
 
-    // Check profile completion
-    const isComplete = checkOwnerProfileCompletion(validatedData);
+    // Auto-populate email from User record
+    const user = await findUserById(userId);
+    const emailAddress = validatedData.emailAddress || user.email;
 
-    const profileData = {
-      ...validatedData,
-      isComplete,
-    };
+    const isComplete = checkOwnerProfileCompletion({ ...validatedData, emailAddress });
+    const newProfile = await createOwnerProfile({ ...validatedData, emailAddress, isComplete }, userId);
 
-    const newProfile = await createOwnerProfile(profileData, userId);
-
-    return res.status(201).json({
-      message: "Owner profile created successfully",
-      profile: newProfile,
-    });
+    return res.status(201).json({ message: "Owner profile created successfully", profile: newProfile });
   } catch (error) {
     console.error("Error creating owner profile:", error);
-    if (error.isJoi) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: error.details.map(detail => detail.message),
-      });
-    }
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    if (error.isJoi) return res.status(400).json({ message: "Validation error", errors: error.details.map(d => d.message) });
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 }
 

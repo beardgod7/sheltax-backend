@@ -19,10 +19,7 @@ const createProfileSchema = Joi.object({
       "string.pattern.base": "Please enter a valid phone number",
       "any.required": "Phone number is required",
     }),
-  emailAddress: Joi.string().email().required().messages({
-    "string.email": "Please enter a valid email address",
-    "any.required": "Email address is required",
-  }),
+  emailAddress: Joi.string().email().optional(),
   stateOfResidence: Joi.string().required().messages({
     "any.required": "State of residence is required",
   }),
@@ -56,10 +53,7 @@ const createBrokerProfileSchema = Joi.object({
       "string.pattern.base": "Please enter a valid phone number",
       "any.required": "Phone number is required",
     }),
-  emailAddress: Joi.string().email().required().messages({
-    "string.email": "Please enter a valid email address",
-    "any.required": "Email address is required",
-  }),
+  emailAddress: Joi.string().email().optional(),
   stateOfResidence: Joi.string().required().messages({
     "any.required": "State of residence is required",
   }),
@@ -122,10 +116,7 @@ const createOwnerProfileSchema = Joi.object({
       "string.pattern.base": "Please enter a valid phone number",
       "any.required": "Phone number is required",
     }),
-  emailAddress: Joi.string().email().required().messages({
-    "string.email": "Please enter a valid email address",
-    "any.required": "Email address is required",
-  }),
+  emailAddress: Joi.string().email().optional(),
   stateOfResidence: Joi.string().required().messages({
     "any.required": "State of residence is required",
   }),
@@ -286,7 +277,7 @@ const createCompleteProfileSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
   surname: Joi.string().min(2).max(50).required(),
   phoneNumber: Joi.string().pattern(/^[+]?[\d\s\-\(\)]{10,15}$/).required(),
-  emailAddress: Joi.string().email().required(),
+  emailAddress: Joi.string().email().optional(),
   stateOfResidence: Joi.string().required(),
   gender: Joi.string().valid("male", "female", "other").required(),
   dateOfBirth: Joi.date().max("now").required(),

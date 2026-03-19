@@ -22,7 +22,7 @@ class PropertyRequestController {
 
       const request = await propertyRequestRepository.createPropertyRequest(
         value,
-        req.user.id
+        req.user.sub
       );
 
       res.status(201).json({
@@ -104,7 +104,7 @@ class PropertyRequestController {
     try {
       const { page = 1, limit = 20 } = req.query;
       const result = await propertyRequestRepository.getSeekerRequests(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -141,7 +141,7 @@ class PropertyRequestController {
       const request = await propertyRequestRepository.updatePropertyRequest(
         id,
         value,
-        req.user.id
+        req.user.sub
       );
 
       if (!request) {
@@ -172,7 +172,7 @@ class PropertyRequestController {
       const { id } = req.params;
       const deleted = await propertyRequestRepository.deletePropertyRequest(
         id,
-        req.user.id
+        req.user.sub
       );
 
       if (!deleted) {
@@ -232,7 +232,7 @@ class PropertyRequestController {
       const response = await propertyRequestRepository.createResponse(
         requestId,
         value,
-        req.user.id
+        req.user.sub
       );
 
       res.status(201).json({
@@ -258,7 +258,7 @@ class PropertyRequestController {
 
       const result = await propertyRequestRepository.getResponsesForRequest(
         requestId,
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -290,7 +290,7 @@ class PropertyRequestController {
     try {
       const { page = 1, limit = 20 } = req.query;
       const result = await propertyRequestRepository.getResponderResponses(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -327,7 +327,7 @@ class PropertyRequestController {
       const response = await propertyRequestRepository.updateResponseStatus(
         responseId,
         value,
-        req.user.id
+        req.user.sub
       );
 
       if (!response) {

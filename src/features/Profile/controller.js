@@ -50,7 +50,7 @@ const {
  */
 async function createSeekerProfile(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     
     const validatedData = await createProfileSchema.validateAsync(req.body);
 
@@ -96,7 +96,7 @@ async function createSeekerProfile(req, res) {
  */
 async function createBrokerProfileHandler(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     
     const validatedData = await createBrokerProfileSchema.validateAsync(req.body);
 
@@ -142,7 +142,7 @@ async function createBrokerProfileHandler(req, res) {
  */
 async function createOwnerProfileHandler(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     
     const validatedData = await createOwnerProfileSchema.validateAsync(req.body);
 
@@ -188,7 +188,7 @@ async function createOwnerProfileHandler(req, res) {
  */
 async function createSeekerPreferences(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     
     const validatedData = await createSeekerPreferenceSchema.validateAsync(req.body);
 
@@ -226,7 +226,7 @@ async function createSeekerPreferences(req, res) {
  */
 async function updateSeekerPreferences(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     
     const validatedData = await updateSeekerPreferenceSchema.validateAsync(req.body);
 
@@ -263,7 +263,7 @@ async function updateSeekerPreferences(req, res) {
  */
 async function getMyProfile(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const userRole = req.user.role;
 
     let profile = null;
@@ -398,7 +398,7 @@ async function getProfileById(req, res) {
  */
 async function updateUserProfile(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const userRole = req.user.role;
     
     let validatedData, existingProfile, updatedProfile;
@@ -466,7 +466,7 @@ async function updateUserProfile(req, res) {
  */
 async function uploadProfilePicture(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const userRole = req.user.role;
     
     // Check if file was uploaded
@@ -573,7 +573,7 @@ async function getProfilesByUserRole(req, res) {
  */
 async function deleteUserProfile(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const userRole = req.user.role;
 
     const deleted = await deleteProfile(userId, userRole);
@@ -640,7 +640,7 @@ async function updateProfileVerification(req, res) {
  */
 async function uploadVerificationDocuments(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const userRole = req.user.role;
     const validatedData = await verificationDocumentsSchema.validateAsync(req.body);
 

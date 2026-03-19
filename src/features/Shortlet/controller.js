@@ -24,7 +24,7 @@ class ShortletController {
 
       const property = await shortletRepository.createShortletProperty(
         value,
-        req.user.id
+        req.user.sub
       );
 
       res.status(201).json({
@@ -106,7 +106,7 @@ class ShortletController {
     try {
       const { page = 1, limit = 20, listingStatus } = req.query;
       const result = await shortletRepository.getShortletPropertiesByOwner(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit),
         listingStatus
@@ -144,7 +144,7 @@ class ShortletController {
       const property = await shortletRepository.updateShortletProperty(
         id,
         value,
-        req.user.id
+        req.user.sub
       );
 
       if (!property) {
@@ -173,7 +173,7 @@ class ShortletController {
   async deleteShortletProperty(req, res) {
     try {
       const { id } = req.params;
-      const deleted = await shortletRepository.deleteShortletProperty(id, req.user.id);
+      const deleted = await shortletRepository.deleteShortletProperty(id, req.user.sub);
 
       if (!deleted) {
         return res.status(404).json({
@@ -307,7 +307,7 @@ class ShortletController {
       const inquiry = await shortletRepository.createShortletInquiry(
         propertyId,
         value,
-        req.user.id
+        req.user.sub
       );
 
       res.status(201).json({
@@ -333,7 +333,7 @@ class ShortletController {
 
       const result = await shortletRepository.getInquiriesForProperty(
         propertyId,
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -365,7 +365,7 @@ class ShortletController {
     try {
       const { page = 1, limit = 20 } = req.query;
       const result = await shortletRepository.getUserInquiries(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -402,7 +402,7 @@ class ShortletController {
       const inquiry = await shortletRepository.respondToInquiry(
         inquiryId,
         value,
-        req.user.id
+        req.user.sub
       );
 
       if (!inquiry) {
@@ -443,7 +443,7 @@ class ShortletController {
         });
       }
 
-      const result = await shortletRepository.addToFavorites(propertyId, req.user.id);
+      const result = await shortletRepository.addToFavorites(propertyId, req.user.sub);
 
       if (!result.created) {
         return res.status(409).json({
@@ -471,7 +471,7 @@ class ShortletController {
   async removeFromFavorites(req, res) {
     try {
       const { id: propertyId } = req.params;
-      const removed = await shortletRepository.removeFromFavorites(propertyId, req.user.id);
+      const removed = await shortletRepository.removeFromFavorites(propertyId, req.user.sub);
 
       if (!removed) {
         return res.status(404).json({
@@ -499,7 +499,7 @@ class ShortletController {
     try {
       const { page = 1, limit = 20 } = req.query;
       const result = await shortletRepository.getUserFavorites(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -525,7 +525,7 @@ class ShortletController {
       const { id: propertyId } = req.params;
       const isFavorited = await shortletRepository.isPropertyFavorited(
         propertyId,
-        req.user.id
+        req.user.sub
       );
 
       res.json({

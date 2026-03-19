@@ -24,7 +24,7 @@ class RentalController {
 
       const property = await rentalRepository.createRentalProperty(
         value,
-        req.user.id
+        req.user.sub
       );
 
       res.status(201).json({
@@ -106,7 +106,7 @@ class RentalController {
     try {
       const { page = 1, limit = 20, listingStatus } = req.query;
       const result = await rentalRepository.getRentalPropertiesByOwner(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit),
         listingStatus
@@ -144,7 +144,7 @@ class RentalController {
       const property = await rentalRepository.updateRentalProperty(
         id,
         value,
-        req.user.id
+        req.user.sub
       );
 
       if (!property) {
@@ -173,7 +173,7 @@ class RentalController {
   async deleteRentalProperty(req, res) {
     try {
       const { id } = req.params;
-      const deleted = await rentalRepository.deleteRentalProperty(id, req.user.id);
+      const deleted = await rentalRepository.deleteRentalProperty(id, req.user.sub);
 
       if (!deleted) {
         return res.status(404).json({
@@ -307,7 +307,7 @@ class RentalController {
       const inquiry = await rentalRepository.createRentalInquiry(
         propertyId,
         value,
-        req.user.id
+        req.user.sub
       );
 
       res.status(201).json({
@@ -333,7 +333,7 @@ class RentalController {
 
       const result = await rentalRepository.getInquiriesForProperty(
         propertyId,
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -365,7 +365,7 @@ class RentalController {
     try {
       const { page = 1, limit = 20 } = req.query;
       const result = await rentalRepository.getUserInquiries(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -402,7 +402,7 @@ class RentalController {
       const inquiry = await rentalRepository.respondToInquiry(
         inquiryId,
         value,
-        req.user.id
+        req.user.sub
       );
 
       if (!inquiry) {
@@ -443,7 +443,7 @@ class RentalController {
         });
       }
 
-      const result = await rentalRepository.addToFavorites(propertyId, req.user.id);
+      const result = await rentalRepository.addToFavorites(propertyId, req.user.sub);
 
       if (!result.created) {
         return res.status(409).json({
@@ -471,7 +471,7 @@ class RentalController {
   async removeFromFavorites(req, res) {
     try {
       const { id: propertyId } = req.params;
-      const removed = await rentalRepository.removeFromFavorites(propertyId, req.user.id);
+      const removed = await rentalRepository.removeFromFavorites(propertyId, req.user.sub);
 
       if (!removed) {
         return res.status(404).json({
@@ -499,7 +499,7 @@ class RentalController {
     try {
       const { page = 1, limit = 20 } = req.query;
       const result = await rentalRepository.getUserFavorites(
-        req.user.id,
+        req.user.sub,
         parseInt(page),
         parseInt(limit)
       );
@@ -525,7 +525,7 @@ class RentalController {
       const { id: propertyId } = req.params;
       const isFavorited = await rentalRepository.isPropertyFavorited(
         propertyId,
-        req.user.id
+        req.user.sub
       );
 
       res.json({

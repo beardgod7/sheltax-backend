@@ -64,8 +64,6 @@
  *                 type: string
  *                 format: password
  *                 minLength: 8
- *               phoneNumber:
- *                 type: string
  *               role:
  *                 type: string
  *                 enum: [seeker, owner, agent, admin]

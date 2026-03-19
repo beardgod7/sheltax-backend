@@ -4,7 +4,6 @@ const Joi = require("joi");
 const signupSchema = Joi.object({
   username: Joi.string().optional(),
   email: Joi.string().email().required(),
-  phoneNumber: Joi.string().optional(),
   password: Joi.string().min(8).required(),
   role: Joi.string().valid("seeker", "owner", "agent", "admin").default("seeker"),
 });

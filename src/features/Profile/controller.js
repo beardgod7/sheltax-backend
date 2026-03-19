@@ -268,32 +268,32 @@ async function getMyProfile(req, res) {
 
     let profile = null;
 
-    // Get profile based on user role
     switch (userRole) {
-      case 'seeker':
+      case "seeker":
         profile = await findProfileByUserId(userId);
         break;
-      case 'broker':
+      case "broker":
         profile = await findBrokerProfileByUserId(userId);
         break;
-      case 'owner':
+      case "owner":
         profile = await findOwnerProfileByUserId(userId);
         break;
-      default:
-        return res.status(400).json({
-          message: "Invalid user role",
+      case "admin":
+      case "super_admin":
+        // Admins may not have a profile — return user info only
+        return res.status(200).json({
+          message: "Profile retrieved successfully",
+          profile: null,
+          user: req.user,
         });
-    }
-
-    if (!profile) {
-      return res.status(404).json({
-        message: "Profile not found",
-      });
+      default:
+        return res.status(400).json({ message: "Invalid user role" });
     }
 
     return res.status(200).json({
       message: "Profile retrieved successfully",
-      profile,
+      profile: profile || null,
+      hasProfile: !!profile,
     });
   } catch (error) {
     console.error("Error getting profile:", error);

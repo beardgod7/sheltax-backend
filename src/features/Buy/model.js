@@ -48,7 +48,6 @@ const SaleProperty = sequelize.define(
     area: {
       type: DataTypes.STRING,
       allowNull: true,
-      comment: "Specific area/neighborhood"
     },
     // Property details
     bedrooms: {
@@ -80,17 +79,14 @@ const SaleProperty = sequelize.define(
     propertyAge: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: "Age of property in years",
     },
     landSize: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
-      comment: "Land size in square meters",
     },
     builtUpArea: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
-      comment: "Built-up area in square meters",
     },
     // Legal documents
     titleDocument: {
@@ -102,20 +98,17 @@ const SaleProperty = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of features like ['Furnished', 'Parking', 'Generator', 'Balcony']"
     },
     amenities: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of amenities like ['Swimming Pool', 'Gym', 'Security', 'Elevator']"
     },
     // Media
     images: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of image URLs"
     },
     virtualTourUrl: {
       type: DataTypes.STRING,
@@ -132,12 +125,10 @@ const SaleProperty = sequelize.define(
       type: DataTypes.ENUM("pending", "active", "rejected", "expired"),
       allowNull: false,
       defaultValue: "pending",
-      comment: "Moderation status of the listing"
     },
     rejectionReason: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Reason for rejection if listing is rejected"
     },
     // Verification
     isVerified: {
@@ -235,7 +226,6 @@ const SaleInquiry = sequelize.define(
     offerAmount: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: true,
-      comment: "Buyer's offer amount if making an offer",
     },
     preferredViewingDate: {
       type: DataTypes.DATE,

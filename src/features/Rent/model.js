@@ -48,7 +48,6 @@ const RentalProperty = sequelize.define(
     area: {
       type: DataTypes.STRING,
       allowNull: true,
-      comment: "Specific area/neighborhood"
     },
     // Property details
     bedrooms: {
@@ -98,20 +97,17 @@ const RentalProperty = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of features like ['Furnished', 'Parking', 'Generator', 'Balcony']"
     },
     amenities: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of amenities like ['Swimming Pool', 'Gym', 'Security', 'Elevator']"
     },
     // Media
     images: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of image URLs"
     },
     virtualTourUrl: {
       type: DataTypes.STRING,
@@ -137,12 +133,10 @@ const RentalProperty = sequelize.define(
       type: DataTypes.ENUM("pending", "active", "rejected", "expired"),
       allowNull: false,
       defaultValue: "pending",
-      comment: "Moderation status of the listing"
     },
     rejectionReason: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Reason for rejection if listing is rejected"
     },
     // Verification
     isVerified: {

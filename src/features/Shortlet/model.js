@@ -48,7 +48,6 @@ const ShortletProperty = sequelize.define(
     area: {
       type: DataTypes.STRING,
       allowNull: true,
-      comment: "Specific area/neighborhood"
     },
     // Property details
     bedrooms: {
@@ -70,7 +69,6 @@ const ShortletProperty = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: { min: 1, max: 50 },
-      comment: "Maximum number of guests allowed"
     },
     // Shortlet pricing
     pricePerNight: {
@@ -107,12 +105,10 @@ const ShortletProperty = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 1,
-      comment: "Minimum number of nights"
     },
     maximumStay: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: "Maximum number of nights (null = no limit)"
     },
     checkInTime: {
       type: DataTypes.TIME,
@@ -127,33 +123,28 @@ const ShortletProperty = sequelize.define(
     instantBooking: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-      comment: "Allow instant booking without approval"
     },
     // Property features
     features: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of features like ['WiFi', 'Kitchen', 'Parking', 'Air Conditioning']"
     },
     amenities: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of amenities like ['Swimming Pool', 'Gym', 'Security', 'Elevator']"
     },
     houseRules: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of house rules like ['No Smoking', 'No Pets', 'No Parties']"
     },
     // Media
     images: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
-      comment: "Array of image URLs"
     },
     virtualTourUrl: {
       type: DataTypes.STRING,
@@ -183,12 +174,10 @@ const ShortletProperty = sequelize.define(
       type: DataTypes.ENUM("pending", "active", "rejected", "expired"),
       allowNull: false,
       defaultValue: "pending",
-      comment: "Moderation status of the listing"
     },
     rejectionReason: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Reason for rejection if listing is rejected"
     },
     // Verification
     isVerified: {

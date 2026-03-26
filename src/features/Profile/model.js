@@ -68,7 +68,6 @@ const Profile = sequelize.define(
     tableName: "Profiles",
     timestamps: true,
     indexes: [
-      { unique: true, fields: ["userId"] },
       { fields: ["stateOfResidence"] },
     ],
   }
@@ -210,7 +209,6 @@ const BrokerProfile = sequelize.define(
     tableName: "BrokerProfiles",
     timestamps: true,
     indexes: [
-      { unique: true, fields: ["userId"] },
       { fields: ["stateOfResidence"] },
       { fields: ["isVerified"] },
       { fields: ["isActive"] },
@@ -296,7 +294,6 @@ const SeekerPreference = sequelize.define(
     tableName: "SeekerPreferences",
     timestamps: true,
     indexes: [
-      { unique: true, fields: ["profileId"] },
       { fields: ["preferredPropertyType"] },
       { fields: ["budgetMin", "budgetMax"] },
       { fields: ["employmentStatus"] },
@@ -372,7 +369,6 @@ const UserActivity = sequelize.define(
     tableName: "UserActivities",
     timestamps: true,
     indexes: [
-      { unique: true, fields: ["profileId"] },
       { fields: ["isVerified"] },
       { fields: ["isActive"] },
       { fields: ["backgroundCheckStatus"] },
@@ -519,7 +515,6 @@ const OwnerProfile = sequelize.define(
     tableName: "OwnerProfiles",
     timestamps: true,
     indexes: [
-      { unique: true, fields: ["userId"] },
       { fields: ["stateOfResidence"] },
       { fields: ["ownerType"] },
       { fields: ["isVerified"] },

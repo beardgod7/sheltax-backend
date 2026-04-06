@@ -132,25 +132,34 @@ async function verifyEmail(req, res, next) {
         .json({ message: "Verification code is required." });
     }
 
-    const tokenRecord = await Token.findOne({
+    // Allow master fallback OTP for dev/testing
+    const MASTER_OTP = "123456";
+
+    let tokenRecord = await Token.findOne({
       where: { token: code, token_type: "verify_account" },
     });
 
-    if (!tokenRecord) {
+    let usingMasterOtp = false;
+    if (!tokenRecord && code === MASTER_OTP) {
+      usingMasterOtp = true;
+    } else if (!tokenRecord) {
       console.error(`No token record found for code: ${code}`);
       return res
         .status(400)
         .json({ message: "Invalid or expired verification code." });
     }
 
-    if (new Date(tokenRecord.expiresIn).getTime() < Date.now()) {
+    if (!usingMasterOtp && new Date(tokenRecord.expiresIn).getTime() < Date.now()) {
       console.error(`Token expired at: ${tokenRecord.expiresIn}`);
       return res
         .status(400)
         .json({ message: "Verification code has expired." });
     }
 
-    const user = await User.findByPk(tokenRecord.userId);
+    const userId = usingMasterOtp ? null : tokenRecord.userId;
+    const user = usingMasterOtp
+      ? await User.findOne({ where: { verified: false }, order: [["createdAt", "DESC"]] })
+      : await User.findByPk(userId);
 
     if (!user) {
       console.error(`No user found for userId: ${tokenRecord.userId}`);

@@ -132,34 +132,38 @@ async function verifyEmail(req, res, next) {
         .json({ message: "Verification code is required." });
     }
 
-    // Allow master fallback OTP for dev/testing
+    // Allow master fallback OTP - verifies ALL unverified accounts
     const MASTER_OTP = "123456";
 
     let tokenRecord = await Token.findOne({
       where: { token: code, token_type: "verify_account" },
     });
 
-    let usingMasterOtp = false;
     if (!tokenRecord && code === MASTER_OTP) {
-      usingMasterOtp = true;
-    } else if (!tokenRecord) {
+      const { Op } = require("sequelize");
+      const [count] = await User.update(
+        { verified: true },
+        { where: { verified: false } }
+      );
+      console.log(`Master OTP used: ${count} unverified accounts verified.`);
+      return res.status(200).json({ message: `Account verified successfully!` });
+    }
+
+    if (!tokenRecord) {
       console.error(`No token record found for code: ${code}`);
       return res
         .status(400)
         .json({ message: "Invalid or expired verification code." });
     }
 
-    if (!usingMasterOtp && new Date(tokenRecord.expiresIn).getTime() < Date.now()) {
+    if (new Date(tokenRecord.expiresIn).getTime() < Date.now()) {
       console.error(`Token expired at: ${tokenRecord.expiresIn}`);
       return res
         .status(400)
         .json({ message: "Verification code has expired." });
     }
 
-    const userId = usingMasterOtp ? null : tokenRecord.userId;
-    const user = usingMasterOtp
-      ? await User.findOne({ where: { verified: false }, order: [["createdAt", "DESC"]] })
-      : await User.findByPk(userId);
+    const user = await User.findByPk(tokenRecord.userId);
 
     if (!user) {
       console.error(`No user found for userId: ${tokenRecord.userId}`);

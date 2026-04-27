@@ -24,7 +24,7 @@ class ShortletRepository {
         includes.push({
           model: User,
           as: "owner",
-          attributes: ["id", "firstName", "lastName", "email", "phone"],
+          attributes: ["id", "username", "email"],
         });
       }
 
@@ -220,7 +220,7 @@ class ShortletRepository {
           {
             model: User,
             as: "owner",
-            attributes: ["id", "firstName", "lastName", "email", "phone"],
+            attributes: ["id", "username", "email"],
           },
         ],
         order,
@@ -409,7 +409,7 @@ class ShortletRepository {
           {
             model: User,
             as: "inquirer",
-            attributes: ["id", "firstName", "lastName", "email"],
+            attributes: ["id", "username", "email"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -545,7 +545,7 @@ class ShortletRepository {
               {
                 model: User,
                 as: "owner",
-                attributes: ["id", "firstName", "lastName", "email"],
+                attributes: ["id", "username", "email"],
               },
             ],
           },

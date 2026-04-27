@@ -24,7 +24,7 @@ class PropertyRequestRepository {
         includes.push({
           model: User,
           as: "seeker",
-          attributes: ["id", "firstName", "lastName", "email", "phone"],
+          attributes: ["id", "username", "email"],
         });
       }
 
@@ -167,7 +167,7 @@ class PropertyRequestRepository {
           {
             model: User,
             as: "seeker",
-            attributes: ["id", "firstName", "lastName", "email", "phone"],
+            attributes: ["id", "username", "email"],
           },
         ],
         order,
@@ -310,7 +310,7 @@ class PropertyRequestRepository {
           {
             model: User,
             as: "responder",
-            attributes: ["id", "firstName", "lastName", "email", "phone", "role"],
+            attributes: ["id", "username", "email", "role"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -351,7 +351,7 @@ class PropertyRequestRepository {
               {
                 model: User,
                 as: "seeker",
-                attributes: ["id", "firstName", "lastName", "email"],
+                attributes: ["id", "username", "email"],
               },
             ],
           },
@@ -416,7 +416,7 @@ class PropertyRequestRepository {
           {
             model: User,
             as: "responder",
-            attributes: ["id", "firstName", "lastName", "email", "phone", "role"],
+            attributes: ["id", "username", "email", "role"],
           },
         ],
       });

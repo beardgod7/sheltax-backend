@@ -24,7 +24,7 @@ class RentalRepository {
         includes.push({
           model: User,
           as: "owner",
-          attributes: ["id", "firstName", "lastName", "email", "phone"],
+          attributes: ["id", "username", "email"],
         });
       }
 
@@ -176,7 +176,7 @@ class RentalRepository {
           {
             model: User,
             as: "owner",
-            attributes: ["id", "firstName", "lastName", "email", "phone"],
+            attributes: ["id", "username", "email"],
           },
         ],
         order,
@@ -365,7 +365,7 @@ class RentalRepository {
           {
             model: User,
             as: "inquirer",
-            attributes: ["id", "firstName", "lastName", "email"],
+            attributes: ["id", "username", "email"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -501,7 +501,7 @@ class RentalRepository {
               {
                 model: User,
                 as: "owner",
-                attributes: ["id", "firstName", "lastName", "email"],
+                attributes: ["id", "username", "email"],
               },
             ],
           },

@@ -243,7 +243,6 @@
  *               - firstName
  *               - surname
  *               - phoneNumber
- *               - emailAddress
  *               - stateOfResidence
  *               - gender
  *               - dateOfBirth
@@ -254,9 +253,6 @@
  *                 type: string
  *               phoneNumber:
  *                 type: string
- *               emailAddress:
- *                 type: string
- *                 format: email
  *               stateOfResidence:
  *                 type: string
  *               gender:
@@ -298,7 +294,6 @@
  *               - firstName
  *               - surname
  *               - phoneNumber
- *               - emailAddress
  *               - stateOfResidence
  *               - gender
  *               - dateOfBirth
@@ -309,9 +304,6 @@
  *                 type: string
  *               phoneNumber:
  *                 type: string
- *               emailAddress:
- *                 type: string
- *                 format: email
  *               stateOfResidence:
  *                 type: string
  *               gender:
@@ -375,7 +367,6 @@
  *               - firstName
  *               - surname
  *               - phoneNumber
- *               - emailAddress
  *               - stateOfResidence
  *               - gender
  *               - dateOfBirth
@@ -387,9 +378,6 @@
  *                 type: string
  *               phoneNumber:
  *                 type: string
- *               emailAddress:
- *                 type: string
- *                 format: email
  *               stateOfResidence:
  *                 type: string
  *               gender:

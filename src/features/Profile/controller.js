@@ -63,7 +63,7 @@ async function createSeekerProfile(req, res) {
 
     // Auto-populate email from User record
     const user = await findUserById(userId);
-    const emailAddress = validatedData.emailAddress || user.email;
+    const emailAddress = user.email;
 
     const isComplete = checkProfileCompletion({ ...validatedData, emailAddress });
     const newProfile = await createProfile({ ...validatedData, emailAddress, isComplete }, userId);
@@ -92,7 +92,7 @@ async function createBrokerProfileHandler(req, res) {
 
     // Auto-populate email from User record
     const user = await findUserById(userId);
-    const emailAddress = validatedData.emailAddress || user.email;
+    const emailAddress = user.email;
 
     const isComplete = checkBrokerProfileCompletion({ ...validatedData, emailAddress });
     const newProfile = await createBrokerProfile({ ...validatedData, emailAddress, isComplete }, userId);
@@ -121,7 +121,7 @@ async function createOwnerProfileHandler(req, res) {
 
     // Auto-populate email from User record
     const user = await findUserById(userId);
-    const emailAddress = validatedData.emailAddress || user.email;
+    const emailAddress = user.email;
 
     const isComplete = checkOwnerProfileCompletion({ ...validatedData, emailAddress });
     const newProfile = await createOwnerProfile({ ...validatedData, emailAddress, isComplete }, userId);

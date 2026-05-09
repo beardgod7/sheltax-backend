@@ -19,41 +19,9 @@ const createProfileSchema = Joi.object({
       "string.pattern.base": "Please enter a valid phone number",
       "any.required": "Phone number is required",
     }),
-  emailAddress: Joi.string().email().optional(),
-  stateOfResidence: Joi.string().required().messages({
-    "any.required": "State of residence is required",
+  emailAddress: Joi.string().email().forbidden().messages({
+    "any.unknown": "Email address is captured from registration and cannot be submitted here",
   }),
-  gender: Joi.string().valid("male", "female", "other").required().messages({
-    "any.only": "Gender must be male, female, or other",
-    "any.required": "Gender is required",
-  }),
-  dateOfBirth: Joi.date().max("now").required().messages({
-    "date.max": "Date of birth cannot be in the future",
-    "any.required": "Date of birth is required",
-  }),
-  ninVerification: Joi.string().optional(), // Optional as shown in Figma
-});
-
-// BrokerProfile schema - Based on Figma design
-const createBrokerProfileSchema = Joi.object({
-  firstName: Joi.string().min(2).max(50).required().messages({
-    "string.min": "First name must be at least 2 characters long",
-    "string.max": "First name cannot exceed 50 characters",
-    "any.required": "First name is required",
-  }),
-  surname: Joi.string().min(2).max(50).required().messages({
-    "string.min": "Surname must be at least 2 characters long",
-    "string.max": "Surname cannot exceed 50 characters",
-    "any.required": "Surname is required",
-  }),
-  phoneNumber: Joi.string()
-    .pattern(/^[+]?[\d\s\-\(\)]{10,15}$/)
-    .required()
-    .messages({
-      "string.pattern.base": "Please enter a valid phone number",
-      "any.required": "Phone number is required",
-    }),
-  emailAddress: Joi.string().email().optional(),
   stateOfResidence: Joi.string().required().messages({
     "any.required": "State of residence is required",
   }),

@@ -68,6 +68,11 @@
  *                 type: string
  *                 enum: [seeker, owner, broker, admin]
  *                 default: seeker
+ *                 description: |
+ *                   User role determines access level and profile type:
+ *                   - `seeker` - Property seeker/tenant looking for properties (default)
+ *                   - `owner` - Property owner who lists properties for rent or sale
+ *                   - `broker` - Real estate broker/agent who manages listings on behalf of owners
  *     responses:
  *       201:
  *         description: User registered successfully

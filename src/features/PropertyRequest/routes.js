@@ -49,7 +49,7 @@ router.delete(
 
 // RESPONSE ROUTES
 
-// Create response to property request (Broker/Owner only)
+// Create response to property request (Agent/Owner only)
 router.post(
   "/:id/responses",
   authorize(["broker", "owner"]),
@@ -63,7 +63,7 @@ router.get(
   propertyRequestController.getRequestResponses
 );
 
-// Get broker/owner's own responses
+// Get Agent/Owner's own responses
 router.get(
   "/my/responses",
   authorize(["broker", "owner"]),

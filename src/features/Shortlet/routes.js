@@ -13,28 +13,28 @@ router.use(authenticate);
 
 // PROPERTY MANAGEMENT ROUTES
 
-// Create shortlet property (Owner/Broker only)
+// Create shortlet property (Owner/Agent only)
 router.post(
   "/",
   authorize(["owner", "broker"]),
   shortletController.createShortletProperty
 );
 
-// Get user's shortlet properties (Owner/Broker only)
+// Get user's shortlet properties (Owner/Agent only)
 router.get(
   "/my/properties",
   authorize(["owner", "broker"]),
   shortletController.getMyShortletProperties
 );
 
-// Update shortlet property (Owner/Broker only)
+// Update shortlet property (Owner/Agent only)
 router.put(
   "/:id",
   authorize(["owner", "broker"]),
   shortletController.updateShortletProperty
 );
 
-// Delete shortlet property (Owner/Broker only)
+// Delete shortlet property (Owner/Agent only)
 router.delete(
   "/:id",
   authorize(["owner", "broker"]),
@@ -50,7 +50,7 @@ router.post(
   shortletController.createShortletInquiry
 );
 
-// Get inquiries for a property (Owner/Broker only)
+// Get inquiries for a property (Owner/Agent only)
 router.get(
   "/:id/inquiries",
   authorize(["owner", "broker"]),
@@ -64,7 +64,7 @@ router.get(
   shortletController.getMyInquiries
 );
 
-// Respond to inquiry (Owner/Broker only)
+// Respond to inquiry (Owner/Agent only)
 router.put(
   "/inquiries/:inquiryId/respond",
   authorize(["owner", "broker"]),

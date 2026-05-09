@@ -23,8 +23,8 @@ const {
 const router = express.Router();
 
 // Public routes
-router.get("/public/:id", getProfileById); // Get public profile by ID (requires type query param: seeker/broker/owner)
-router.get("/role/:role", getProfilesByUserRole); // Get profiles by role (broker/owner/seeker)
+router.get("/public/:id", getProfileById); // Get public profile by ID (requires type query param: seeker/Agent/Owner)
+router.get("/role/:role", getProfilesByUserRole); // Get profiles by role (Agent/Owner/seeker)
 
 // Protected routes (require authentication)
 router.use(authenticate); // Apply authentication middleware to all routes below

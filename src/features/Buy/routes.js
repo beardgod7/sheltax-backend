@@ -13,28 +13,28 @@ router.use(authenticate);
 
 // PROPERTY MANAGEMENT ROUTES
 
-// Create sale property (Owner/Broker only)
+// Create sale property (Owner/Agent only)
 router.post(
   "/",
   authorize(["owner", "broker"]),
   saleController.createSaleProperty
 );
 
-// Get user's sale properties (Owner/Broker only)
+// Get user's sale properties (Owner/Agent only)
 router.get(
   "/my/properties",
   authorize(["owner", "broker"]),
   saleController.getMySaleProperties
 );
 
-// Update sale property (Owner/Broker only)
+// Update sale property (Owner/Agent only)
 router.put(
   "/:id",
   authorize(["owner", "broker"]),
   saleController.updateSaleProperty
 );
 
-// Delete sale property (Owner/Broker only)
+// Delete sale property (Owner/Agent only)
 router.delete(
   "/:id",
   authorize(["owner", "broker"]),
@@ -50,7 +50,7 @@ router.post(
   saleController.createSaleInquiry
 );
 
-// Get inquiries for a property (Owner/Broker only)
+// Get inquiries for a property (Owner/Agent only)
 router.get(
   "/:id/inquiries",
   authorize(["owner", "broker"]),
@@ -64,7 +64,7 @@ router.get(
   saleController.getMyInquiries
 );
 
-// Respond to inquiry (Owner/Broker only)
+// Respond to inquiry (Owner/Agent only)
 router.put(
   "/inquiries/:inquiryId/respond",
   authorize(["owner", "broker"]),

@@ -489,9 +489,9 @@ async function getProfilesByUserRole(req, res) {
     const { role } = req.params;
     const { state, isVerified, isActive, minRating, budgetMin, budgetMax } = req.query;
 
-    if (!["agent", "owner", "seeker"].includes(role)) {
+    if (!["broker", "owner", "seeker"].includes(role)) {
       return res.status(400).json({
-        message: "Invalid role. Must be 'agent', 'owner', or 'seeker'",
+        message: "Invalid role. Must be 'broker', 'owner', or 'seeker'",
       });
     }
 
@@ -560,9 +560,9 @@ async function updateProfileVerification(req, res) {
       });
     }
 
-    if (!role || !["agent", "owner", "seeker"].includes(role)) {
+    if (!role || !["broker", "owner", "seeker"].includes(role)) {
       return res.status(400).json({
-        message: "Valid role is required (agent, owner, or seeker)",
+        message: "Valid role is required (broker, owner, or seeker)",
       });
     }
 

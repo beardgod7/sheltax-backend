@@ -5,7 +5,7 @@ const signupSchema = Joi.object({
   username: Joi.string().optional(),
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
-  role: Joi.string().valid("seeker", "owner", "agent", "admin").default("seeker"),
+  role: Joi.string().valid("seeker", "owner", "broker", "admin").default("seeker"),
 });
 
 // Signin schema

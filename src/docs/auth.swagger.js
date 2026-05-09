@@ -31,7 +31,7 @@
  *           description: How the user signed up
  *         role:
  *           type: string
- *           enum: [seeker, owner, agent, admin, super_admin]
+ *           enum: [seeker, owner, broker, admin, super_admin]
  *         verified:
  *           type: boolean
  *         createdAt:
@@ -66,7 +66,7 @@
  *                 minLength: 8
  *               role:
  *                 type: string
- *                 enum: [seeker, owner, agent, admin]
+ *                 enum: [seeker, owner, broker, admin]
  *                 default: seeker
  *     responses:
  *       201:

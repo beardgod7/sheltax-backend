@@ -1,5 +1,6 @@
 ﻿const Joi = require("joi");
 
+// Seeker profile - matches Figma exactly
 const createProfileSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
   surname: Joi.string().min(2).max(50).required(),
@@ -20,6 +21,7 @@ const updateProfileSchema = Joi.object({
   ninVerification: Joi.string().optional(),
 });
 
+// Broker profile - Personal Info + Agency Information (matches Figma exactly)
 const createBrokerProfileSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
   surname: Joi.string().min(2).max(50).required(),
@@ -30,15 +32,6 @@ const createBrokerProfileSchema = Joi.object({
   ninVerification: Joi.string().optional(),
   agencyCompanyName: Joi.string().max(100).optional(),
   agentLicenseNumber: Joi.string().max(50).optional(),
-  yearsOfExperience: Joi.number().integer().min(0).max(50).optional(),
-  specialization: Joi.string().max(500).optional(),
-  bio: Joi.string().max(1000).optional(),
-  website: Joi.string().uri().optional(),
-  linkedinProfile: Joi.string().uri().optional(),
-  address: Joi.string().max(200).optional(),
-  city: Joi.string().max(50).optional(),
-  state: Joi.string().max(50).optional(),
-  zipCode: Joi.string().max(10).optional(),
 });
 
 const updateBrokerProfileSchema = Joi.object({
@@ -51,17 +44,9 @@ const updateBrokerProfileSchema = Joi.object({
   ninVerification: Joi.string().optional(),
   agencyCompanyName: Joi.string().max(100).optional(),
   agentLicenseNumber: Joi.string().max(50).optional(),
-  yearsOfExperience: Joi.number().integer().min(0).max(50).optional(),
-  specialization: Joi.string().max(500).optional(),
-  bio: Joi.string().max(1000).optional(),
-  website: Joi.string().uri().optional(),
-  linkedinProfile: Joi.string().uri().optional(),
-  address: Joi.string().max(200).optional(),
-  city: Joi.string().max(50).optional(),
-  state: Joi.string().max(50).optional(),
-  zipCode: Joi.string().max(10).optional(),
 });
 
+// Owner profile - Personal Info only (matches Figma exactly)
 const createOwnerProfileSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
   surname: Joi.string().min(2).max(50).required(),
@@ -70,15 +55,8 @@ const createOwnerProfileSchema = Joi.object({
   gender: Joi.string().valid("male", "female", "other").required(),
   dateOfBirth: Joi.date().max("now").required(),
   ninVerification: Joi.string().optional(),
-  ownerType: Joi.string().valid("individual", "company", "investment_group").required(),
-  companyName: Joi.string().max(100).optional(),
-  businessRegistrationNumber: Joi.string().max(50).optional(),
-  bio: Joi.string().max(1000).optional(),
-  website: Joi.string().uri().optional(),
-  address: Joi.string().max(200).optional(),
-  city: Joi.string().max(50).optional(),
-  state: Joi.string().max(50).optional(),
-  zipCode: Joi.string().max(10).optional(),
+  agencyCompanyName: Joi.string().max(100).optional(),
+  agentLicenseNumber: Joi.string().max(50).optional(),
 });
 
 const updateOwnerProfileSchema = Joi.object({
@@ -89,15 +67,8 @@ const updateOwnerProfileSchema = Joi.object({
   gender: Joi.string().valid("male", "female", "other").optional(),
   dateOfBirth: Joi.date().max("now").optional(),
   ninVerification: Joi.string().optional(),
-  ownerType: Joi.string().valid("individual", "company", "investment_group").optional(),
-  companyName: Joi.string().max(100).optional(),
-  businessRegistrationNumber: Joi.string().max(50).optional(),
-  bio: Joi.string().max(1000).optional(),
-  website: Joi.string().uri().optional(),
-  address: Joi.string().max(200).optional(),
-  city: Joi.string().max(50).optional(),
-  state: Joi.string().max(50).optional(),
-  zipCode: Joi.string().max(10).optional(),
+  agencyCompanyName: Joi.string().max(100).optional(),
+  agentLicenseNumber: Joi.string().max(50).optional(),
 });
 
 const createSeekerPreferenceSchema = Joi.object({

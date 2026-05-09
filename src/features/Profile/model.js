@@ -132,52 +132,16 @@ const BrokerProfile = sequelize.define(
     // Agency Information from Figma design
     agencyCompanyName: {
       type: DataTypes.STRING,
-      allowNull: true, // Optional as shown in design
+      allowNull: true,
     },
     agentLicenseNumber: {
       type: DataTypes.STRING,
-      allowNull: true, // Optional as shown in design
-    },
-    // Additional professional fields
-    yearsOfExperience: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      validate: { min: 0, max: 50 },
-    },
-    specialization: {
-      type: DataTypes.TEXT,
       allowNull: true,
     },
-    bio: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    website: {
+    profilePicture: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    linkedinProfile: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    // Address information (optional)
-    address: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    city: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    state: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    zipCode: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    // Broker verification and ratings
     isVerified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -185,20 +149,6 @@ const BrokerProfile = sequelize.define(
     verificationDocuments: {
       type: DataTypes.JSON,
       allowNull: true,
-    },
-    averageRating: {
-      type: DataTypes.DECIMAL(2, 1),
-      defaultValue: 0.0,
-      validate: { min: 0, max: 5 },
-    },
-    totalReviews: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    // Professional status
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
     },
     isComplete: {
       type: DataTypes.BOOLEAN,
@@ -211,9 +161,6 @@ const BrokerProfile = sequelize.define(
     indexes: [
       { fields: ["stateOfResidence"] },
       { fields: ["isVerified"] },
-      { fields: ["isActive"] },
-      { fields: ["averageRating"] },
-      { fields: ["agencyCompanyName"] },
     ],
   }
 );
@@ -433,47 +380,15 @@ const OwnerProfile = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // Owner-specific fields
-    ownerType: {
-      type: DataTypes.ENUM("individual", "company", "investment_group"),
-      allowNull: false,
-      defaultValue: "individual",
-    },
-    companyName: {
-      type: DataTypes.STRING,
-      allowNull: true, // Optional for individual owners
-    },
-    businessRegistrationNumber: {
+    // Owner-specific: Agency Information from Figma design
+    agencyCompanyName: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // Address information (optional)
-    address: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    city: {
+    agentLicenseNumber: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    state: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    zipCode: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    // Additional fields
-    bio: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    website: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    // Owner verification
     isVerified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -481,30 +396,6 @@ const OwnerProfile = sequelize.define(
     verificationDocuments: {
       type: DataTypes.JSON,
       allowNull: true,
-    },
-    // Property management stats
-    totalProperties: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    activeListings: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    // Owner ratings
-    averageRating: {
-      type: DataTypes.DECIMAL(2, 1),
-      defaultValue: 0.0,
-      validate: { min: 0, max: 5 },
-    },
-    totalReviews: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    // Status
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
     },
     isComplete: {
       type: DataTypes.BOOLEAN,
@@ -516,10 +407,7 @@ const OwnerProfile = sequelize.define(
     timestamps: true,
     indexes: [
       { fields: ["stateOfResidence"] },
-      { fields: ["ownerType"] },
       { fields: ["isVerified"] },
-      { fields: ["isActive"] },
-      { fields: ["averageRating"] },
     ],
   }
 );

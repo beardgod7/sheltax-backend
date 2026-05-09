@@ -59,6 +59,7 @@
  *         emailAddress:
  *           type: string
  *           format: email
+ *           description: Auto-populated from registration
  *         stateOfResidence:
  *           type: string
  *         gender:
@@ -77,32 +78,7 @@
  *         agentLicenseNumber:
  *           type: string
  *           description: Agent License Number (Optional)
- *         yearsOfExperience:
- *           type: integer
- *         specialization:
- *           type: string
- *         bio:
- *           type: string
- *         website:
- *           type: string
- *         linkedinProfile:
- *           type: string
- *         address:
- *           type: string
- *         city:
- *           type: string
- *         state:
- *           type: string
- *         zipCode:
- *           type: string
- *         averageRating:
- *           type: number
- *           format: float
- *         totalReviews:
- *           type: integer
  *         isVerified:
- *           type: boolean
- *         isActive:
  *           type: boolean
  *         isComplete:
  *           type: boolean
@@ -131,6 +107,7 @@
  *         emailAddress:
  *           type: string
  *           format: email
+ *           description: Auto-populated from registration
  *         stateOfResidence:
  *           type: string
  *         gender:
@@ -143,38 +120,13 @@
  *           type: string
  *         profilePicture:
  *           type: string
- *         ownerType:
+ *         agencyCompanyName:
  *           type: string
- *           enum: [individual, company, investment_group]
- *           description: Required - Type of owner
- *         companyName:
+ *           description: Agency/Company Name (Optional)
+ *         agentLicenseNumber:
  *           type: string
- *         businessRegistrationNumber:
- *           type: string
- *         bio:
- *           type: string
- *         website:
- *           type: string
- *         address:
- *           type: string
- *         city:
- *           type: string
- *         state:
- *           type: string
- *         zipCode:
- *           type: string
- *         totalProperties:
- *           type: integer
- *         activeListings:
- *           type: integer
- *         averageRating:
- *           type: number
- *           format: float
- *         totalReviews:
- *           type: integer
+ *           description: Agent License Number (Optional)
  *         isVerified:
- *           type: boolean
- *         isActive:
  *           type: boolean
  *         isComplete:
  *           type: boolean
@@ -318,24 +270,6 @@
  *                 type: string
  *               agentLicenseNumber:
  *                 type: string
- *               yearsOfExperience:
- *                 type: integer
- *               specialization:
- *                 type: string
- *               bio:
- *                 type: string
- *               website:
- *                 type: string
- *               linkedinProfile:
- *                 type: string
- *               address:
- *                 type: string
- *               city:
- *                 type: string
- *               state:
- *                 type: string
- *               zipCode:
- *                 type: string
  *     responses:
  *       201:
  *         description: Broker profile created successfully
@@ -370,7 +304,6 @@
  *               - stateOfResidence
  *               - gender
  *               - dateOfBirth
- *               - ownerType
  *             properties:
  *               firstName:
  *                 type: string
@@ -388,24 +321,9 @@
  *                 format: date
  *               ninVerification:
  *                 type: string
- *               ownerType:
+ *               agencyCompanyName:
  *                 type: string
- *                 enum: [individual, company, investment_group]
- *               companyName:
- *                 type: string
- *               businessRegistrationNumber:
- *                 type: string
- *               bio:
- *                 type: string
- *               website:
- *                 type: string
- *               address:
- *                 type: string
- *               city:
- *                 type: string
- *               state:
- *                 type: string
- *               zipCode:
+ *               agentLicenseNumber:
  *                 type: string
  *     responses:
  *       201:

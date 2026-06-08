@@ -13,6 +13,9 @@ const {
 const Userhash = require("../../utils/bcrypt");
 const {
   signupSchema,
+  setPasswordSchema,
+  completeOwnerProfileSchema,
+  completeBrokerProfileSchema,
   signinSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -37,9 +40,6 @@ const {
 } = require("../../service/emailservice");
 const { User, Token } = require("./model");
 
-//const respond = require("../../utils/respond");
-const { token } = require("morgan");
-
 // Function to get user by ID
 const getUsersById = async (req, res) => {
   const { id } = req.params;
@@ -48,17 +48,20 @@ const getUsersById = async (req, res) => {
     const user = await findUserById(id);
 
     if (!user) {
-      logger.info(`No user found with ID: ${id}`);
       return res.status(404).json({ message: "User not found" });
     }
 
     return res.status(200).json(user);
   } catch (error) {
-    logger.error(`Error fetching user by ID: ${error.message}`);
+    console.error(`Error fetching user by ID: ${error.message}`);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+/**
+ * Signup - New flow: collects user info + role, no password yet.
+ * Password is set after OTP verification via /auth/set-password
+ */
 async function signup(req, res, next) {
   try {
     const validatedData = await signupSchema.validateAsync(req.body);
@@ -68,41 +71,262 @@ async function signup(req, res, next) {
       return res.status(409).json({ message: "Account already exists!" });
     }
 
-    //const hashedPassword = await Userhash.hashPassword(validatedData.password);
-    const newUserData = { ...validatedData };
+    // Build user data - no password at this stage
+    const newUserData = {
+      email: validatedData.email.toLowerCase(),
+      role: validatedData.role,
+      firstName: validatedData.firstName,
+      surname: validatedData.surname,
+      phoneNumber: validatedData.phoneNumber,
+      ninVerification: validatedData.ninVerification || null,
+      brokerProfileType: validatedData.brokerProfileType || null,
+      yearsOfExperience: validatedData.yearsOfExperience || null,
+      bio: validatedData.bio || null,
+      specialization: validatedData.specialization || null,
+      signup_channel: "manual",
+    };
 
     const newUser = await createUser(newUserData);
 
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
+    // Only send OTP at signup for seekers.
+    // Owner/Broker get OTP after verify-identity step.
+    if (validatedData.role === "seeker") {
+      const verificationCode = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
 
-    await Token.create({
+      await Token.create({
+        userId: newUser.id,
+        token: verificationCode,
+        token_type: "verify_account",
+        expiresIn: Date.now() + 300000,
+      });
+
+      try {
+        await sendVerificationCodeEmail(newUser.email, verificationCode);
+      } catch (emailErr) {
+        console.error("Email sending failed: ", emailErr);
+      }
+
+      return res.status(201).json({
+        message: "Account created successfully! Please check your email to verify your account.",
+        userId: newUser.id,
+        nextStep: "verify-otp",
+      });
+    }
+
+    // Owner/Broker — no OTP yet, they need to complete profile + verify identity first
+    return res.status(201).json({
+      message: "Account created successfully! Please complete your profile.",
       userId: newUser.id,
+      nextStep: "complete-profile",
+    });
+  } catch (err) {
+    console.error("Signup Error: ", err);
+    if (err.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: err.details.map((d) => d.message),
+      });
+    }
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
+  }
+}
+
+/**
+ * Set Password - called after OTP verification.
+ * User must be verified before they can set their password.
+ */
+async function setPassword(req, res, next) {
+  try {
+    const validatedData = await setPasswordSchema.validateAsync(req.body);
+
+    const user = await findUserByEmail(validatedData.email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (!user.verified) {
+      return res.status(403).json({
+        message: "Account not verified. Please verify your email first.",
+      });
+    }
+
+    if (user.password) {
+      return res.status(400).json({
+        message: "Password has already been set. Use forgot-password to reset.",
+      });
+    }
+
+    // Hash and save password
+    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    // Generate tokens so user is logged in after setting password
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshTokenValue = generateRefreshToken(user.id);
+
+    const decodedRefreshToken = jwt.verify(
+      refreshTokenValue,
+      process.env.JWT_SECRET
+    );
+
+    let tokenRecord = await Token.findOne({
+      where: { userId: user.id, token_type: "refresh_token" },
+    });
+
+    if (tokenRecord) {
+      tokenRecord.token = refreshTokenValue;
+      tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
+      await tokenRecord.save();
+    } else {
+      await Token.create({
+        userId: user.id,
+        token: refreshTokenValue,
+        token_type: "refresh_token",
+        expiresIn: new Date(decodedRefreshToken.exp * 1000),
+      });
+    }
+
+    return res.status(200).json({
+      message: "Password set successfully. You are now logged in.",
+      access_token: accessToken,
+      refresh_token: refreshTokenValue,
+      role: user.role,
+      verification: user.verified,
+      id: user.id,
+    });
+  } catch (err) {
+    console.error("Set Password Error: ", err);
+    if (err.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: err.details.map((d) => d.message),
+      });
+    }
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
+  }
+}
+
+/**
+ * Complete Profile - Step 2 for Owner/Broker.
+ * Owner: location, propertyTypes, listingIntent, ownerType
+ * Broker: agencyCompanyName, companyYearsOfExistence, operatingLocations, companySize, portfolioSummary
+ */
+async function completeProfile(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    let validatedData;
+    if (user.role === "owner") {
+      validatedData = await completeOwnerProfileSchema.validateAsync(req.body);
+      user.location = validatedData.location;
+      user.propertyTypes = validatedData.propertyTypes;
+      user.listingIntent = validatedData.listingIntent;
+      user.ownerType = validatedData.ownerType;
+    } else if (user.role === "broker") {
+      validatedData = await completeBrokerProfileSchema.validateAsync(req.body);
+      user.agencyCompanyName = validatedData.agencyCompanyName || null;
+      user.companyYearsOfExistence = validatedData.companyYearsOfExistence || null;
+      user.operatingLocations = validatedData.operatingLocations;
+      user.companySize = validatedData.companySize || null;
+      user.portfolioSummary = validatedData.portfolioSummary || null;
+    } else {
+      return res.status(400).json({ message: "This step is only for owner or broker roles." });
+    }
+
+    user.registrationStep = 2;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile information saved successfully.",
+      registrationStep: 2,
+    });
+  } catch (err) {
+    console.error("Complete Profile Error: ", err);
+    if (err.isJoi) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: err.details.map((d) => d.message),
+      });
+    }
+    return res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+}
+
+/**
+ * Verify Identity - Step 3 for Owner/Broker.
+ * Accepts file uploads: profilePicture, governmentId, ninCacDocument
+ */
+async function verifyIdentity(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.role !== "owner" && user.role !== "broker") {
+      return res.status(400).json({ message: "This step is only for owner or broker roles." });
+    }
+
+    // Handle file uploads - files come from multer middleware
+    if (req.files) {
+      if (req.files.profilePicture && req.files.profilePicture[0]) {
+        user.profilePicture = req.files.profilePicture[0].path;
+      }
+      if (req.files.governmentId && req.files.governmentId[0]) {
+        user.governmentId = req.files.governmentId[0].path;
+      }
+      if (req.files.ninCacDocument && req.files.ninCacDocument[0]) {
+        user.ninCacDocument = req.files.ninCacDocument[0].path;
+      }
+    }
+
+    user.registrationStep = 3;
+    await user.save();
+
+    // Now send OTP for verification
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Token.destroy({ where: { userId: user.id, token_type: "verify_account" } });
+    await Token.create({
+      userId: user.id,
       token: verificationCode,
       token_type: "verify_account",
       expiresIn: Date.now() + 300000,
     });
 
     try {
-      await sendVerificationCodeEmail(newUser.email, verificationCode);
-
-      return res.status(201).json({
-        message:
-          "Account created successfully! Please check your email to verify your account.",
-      });
+      await sendVerificationCodeEmail(user.email, verificationCode);
     } catch (emailErr) {
       console.error("Email sending failed: ", emailErr);
-      return res.status(201).json({
-        message:
-          "Account created successfully, but we couldn’t send a verification email. Please try verifying later.",
-      });
     }
+
+    return res.status(200).json({
+      message: "Identity documents uploaded successfully. OTP sent to your email.",
+      registrationStep: 3,
+    });
   } catch (err) {
-    console.error("Signup Error: ", err);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+    console.error("Verify Identity Error: ", err);
+    return res.status(500).json({ message: "Internal Server Error", error: err.message });
   }
 }
 
@@ -176,7 +400,10 @@ async function verifyEmail(req, res, next) {
 
     await Token.destroy({ where: { token: code } });
 
-    return res.status(200).json({ message: "Account verified successfully!" });
+    return res.status(200).json({
+      message: "Account verified successfully!",
+      email: user.email,
+    });
   } catch (error) {
     console.error("Verification Error:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -185,8 +412,6 @@ async function verifyEmail(req, res, next) {
 
 /**
  * Resends the verification email for a user.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
  */
 async function resendVerificationCode(req, res) {
   try {
@@ -253,12 +478,20 @@ async function login(req, res, next) {
     // Find user by email (case-insensitive) or username
     const user = isEmail
       ? await findUserByEmail(identifier)
-      : await findUserByUsername(identifier);
+      : await User.findOne({ where: { username: identifier } });
 
     if (!user) {
       return res
         .status(401)
         .json({ message: "Invalid credentials - user not found." });
+    }
+
+    // Check that the user has set a password
+    if (!user.password) {
+      return res.status(403).json({
+        message:
+          "Password not set. Please complete your registration by setting a password.",
+      });
     }
 
     if (!user.verified) {
@@ -284,6 +517,7 @@ async function login(req, res, next) {
           "Account not verified. A new verification code has been sent to your email address.",
       });
     }
+
     const isMatch = await Userhash.comparePassword(password, user.password);
     if (!isMatch) {
       return res
@@ -292,12 +526,12 @@ async function login(req, res, next) {
     }
 
     const accessToken = generateAccessToken(user.id, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    const refreshTokenValue = generateRefreshToken(user.id);
     const Role = user.role;
     const verify = user.verified;
 
     const decodedRefreshToken = jwt.verify(
-      refreshToken,
+      refreshTokenValue,
       process.env.JWT_SECRET
     );
     let tokenRecord = await Token.findOne({
@@ -305,13 +539,13 @@ async function login(req, res, next) {
     });
 
     if (tokenRecord) {
-      tokenRecord.token = refreshToken;
+      tokenRecord.token = refreshTokenValue;
       tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
       await tokenRecord.save();
     } else {
       await Token.create({
         userId: user.id,
-        token: refreshToken,
+        token: refreshTokenValue,
         token_type: "refresh_token",
         expiresIn: new Date(decodedRefreshToken.exp * 1000),
       });
@@ -319,7 +553,7 @@ async function login(req, res, next) {
     return res.status(200).json({
       message: "Login successful",
       access_token: accessToken,
-      refresh_token: refreshToken,
+      refresh_token: refreshTokenValue,
       role: Role,
       verification: verify,
       id: user.id,
@@ -409,10 +643,8 @@ async function logout(req, res, next) {
 // Forgot Password - Send Reset Code (expires in 5 minutes)
 async function forgotPassword(req, res, next) {
   try {
-    // Validate input
     const validatedData = await forgotPasswordSchema.validateAsync(req.body);
 
-    // Check if user exists
     const user = await findUserByEmail(validatedData.email);
     if (!user) {
       return res
@@ -420,10 +652,8 @@ async function forgotPassword(req, res, next) {
         .json({ message: "No user found with this email address." });
     }
 
-    // Generate a 6-digit numeric reset code
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store reset token in DB with 5 minutes expiry
     await Token.create({
       userId: user.id,
       token: resetCode,
@@ -431,7 +661,6 @@ async function forgotPassword(req, res, next) {
       expiresIn: Date.now() + 5 * 60 * 1000,
     });
 
-    // Send reset code email
     await sendResetCodeEmail(user.email, resetCode);
 
     return res.status(200).json({
@@ -465,7 +694,7 @@ async function resetPassword(req, res, next) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const hashedPassword = await Userhash.hashPassword(validatedData.password);
+    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
     user.password = hashedPassword;
     await user.save();
 
@@ -494,7 +723,6 @@ async function createSuperAdmin() {
       where: { email: superAdminEmail, role: "super_admin" },
     });
     if (existingAdmin) {
-      // console.log("Super admin already exists.");
       return;
     }
     const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
@@ -504,7 +732,6 @@ async function createSuperAdmin() {
       password: hashedPassword,
       role: "super_admin",
       signup_channel: "manual",
-      account_status: "active",
       verified: true,
     });
     console.log("Super admin account created successfully.");
@@ -551,10 +778,8 @@ async function googleOAuth(req, res, next) {
     const validatedData = await googleOAuthSchema.validateAsync(req.body);
     const { idToken } = validatedData;
 
-    // Initialize Google OAuth client
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-    // Verify the Google ID token
     const ticket = await client.verifyIdToken({
       idToken: idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -564,64 +789,68 @@ async function googleOAuth(req, res, next) {
     const { email, name, picture, email_verified } = payload;
 
     if (!email_verified) {
-      return res.status(400).json({ 
-        message: "Google account email is not verified" 
+      return res.status(400).json({
+        message: "Google account email is not verified",
       });
     }
 
-    // Check if user exists or create new user
     const user = await findOrCreateGoogleUser({
       email: email.toLowerCase(),
       username: name,
       googleId: payload.sub,
       profilePicture: picture,
-      verified: true, // Google accounts are pre-verified
+      verified: true,
       signup_channel: "google",
     });
 
-    // Generate tokens
     const accessToken = generateAccessToken(user.id, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    const refreshTokenValue = generateRefreshToken(user.id);
 
-    // Store refresh token
-    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decodedRefreshToken = jwt.verify(
+      refreshTokenValue,
+      process.env.JWT_SECRET
+    );
     let tokenRecord = await Token.findOne({
       where: { userId: user.id, token_type: "refresh_token" },
     });
 
     if (tokenRecord) {
-      tokenRecord.token = refreshToken;
+      tokenRecord.token = refreshTokenValue;
       tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
       await tokenRecord.save();
     } else {
       await Token.create({
         userId: user.id,
-        token: refreshToken,
+        token: refreshTokenValue,
         token_type: "refresh_token",
         expiresIn: new Date(decodedRefreshToken.exp * 1000),
       });
     }
 
     return res.status(200).json({
-      message: user.isNewUser ? "Account created successfully with Google" : "Login successful",
+      message: user.isNewUser
+        ? "Account created successfully with Google"
+        : "Login successful",
       access_token: accessToken,
-      refresh_token: refreshToken,
+      refresh_token: refreshTokenValue,
       role: user.role,
       verification: user.verified,
       id: user.id,
       isNewUser: user.isNewUser,
     });
-
   } catch (error) {
     console.error("Google OAuth Error: ", error);
-    if (error.message.includes("Token used too early") || error.message.includes("Invalid token")) {
-      return res.status(400).json({ 
-        message: "Invalid Google token" 
+    if (
+      error.message.includes("Token used too early") ||
+      error.message.includes("Invalid token")
+    ) {
+      return res.status(400).json({
+        message: "Invalid Google token",
       });
     }
-    return res.status(500).json({ 
-      message: "Internal Server Error", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 }
@@ -632,90 +861,88 @@ async function twitterOAuth(req, res, next) {
     const validatedData = await twitterOAuthSchema.validateAsync(req.body);
     const { oauth_token, oauth_verifier } = validatedData;
 
-    // Exchange oauth_token and oauth_verifier for access token
     const twitterResponse = await axios.post(
-      'https://api.twitter.com/oauth/access_token',
+      "https://api.twitter.com/oauth/access_token",
       `oauth_token=${oauth_token}&oauth_verifier=${oauth_verifier}`,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
 
     const responseData = new URLSearchParams(twitterResponse.data);
-    const accessToken = responseData.get('oauth_token');
-    const accessTokenSecret = responseData.get('oauth_token_secret');
-    const userId = responseData.get('user_id');
-    const screenName = responseData.get('screen_name');
+    const accessToken = responseData.get("oauth_token");
+    const accessTokenSecret = responseData.get("oauth_token_secret");
+    const userId = responseData.get("user_id");
+    const screenName = responseData.get("screen_name");
 
     if (!accessToken || !userId) {
-      return res.status(400).json({ 
-        message: "Invalid Twitter OAuth response" 
+      return res.status(400).json({
+        message: "Invalid Twitter OAuth response",
       });
     }
 
-    // Get user profile from Twitter API v2
     const userProfileResponse = await axios.get(
       `https://api.twitter.com/2/users/${userId}?user.fields=profile_image_url,public_metrics`,
       {
         headers: {
-          'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+          Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
         },
       }
     );
 
     const twitterUser = userProfileResponse.data.data;
 
-    // Create user data object
     const userData = {
-      email: null, // Twitter doesn't always provide email
+      email: null,
       username: twitterUser.username || screenName,
       twitterId: userId,
       profilePicture: twitterUser.profile_image_url,
     };
 
-    // Find or create user
     const user = await findOrCreateTwitterUser(userData);
 
-    // Generate tokens
     const accessTokenJWT = generateAccessToken(user.id, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    const refreshTokenValue = generateRefreshToken(user.id);
 
-    // Store refresh token
-    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decodedRefreshToken = jwt.verify(
+      refreshTokenValue,
+      process.env.JWT_SECRET
+    );
     let tokenRecord = await Token.findOne({
       where: { userId: user.id, token_type: "refresh_token" },
     });
 
     if (tokenRecord) {
-      tokenRecord.token = refreshToken;
+      tokenRecord.token = refreshTokenValue;
       tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
       await tokenRecord.save();
     } else {
       await Token.create({
         userId: user.id,
-        token: refreshToken,
+        token: refreshTokenValue,
         token_type: "refresh_token",
         expiresIn: new Date(decodedRefreshToken.exp * 1000),
       });
     }
 
     return res.status(200).json({
-      message: user.isNewUser ? "Account created successfully with Twitter" : "Login successful",
+      message: user.isNewUser
+        ? "Account created successfully with Twitter"
+        : "Login successful",
       access_token: accessTokenJWT,
-      refresh_token: refreshToken,
+      refresh_token: refreshTokenValue,
       role: user.role,
       verification: user.verified,
       id: user.id,
       isNewUser: user.isNewUser,
     });
-
   } catch (error) {
     console.error("Twitter OAuth Error: ", error);
-    return res.status(500).json({ 
-      message: "Internal Server Error", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 }
@@ -726,7 +953,6 @@ async function facebookOAuth(req, res, next) {
     const validatedData = await facebookOAuthSchema.validateAsync(req.body);
     const { accessToken } = validatedData;
 
-    // Verify Facebook access token and get user data
     const facebookResponse = await axios.get(
       `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${accessToken}`
     );
@@ -734,12 +960,11 @@ async function facebookOAuth(req, res, next) {
     const facebookUser = facebookResponse.data;
 
     if (!facebookUser.id) {
-      return res.status(400).json({ 
-        message: "Invalid Facebook access token" 
+      return res.status(400).json({
+        message: "Invalid Facebook access token",
       });
     }
 
-    // Create user data object
     const userData = {
       email: facebookUser.email,
       username: facebookUser.name,
@@ -747,58 +972,62 @@ async function facebookOAuth(req, res, next) {
       profilePicture: facebookUser.picture?.data?.url,
     };
 
-    // Find or create user
     const user = await findOrCreateFacebookUser(userData);
 
-    // Generate tokens
     const accessTokenJWT = generateAccessToken(user.id, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    const refreshTokenValue = generateRefreshToken(user.id);
 
-    // Store refresh token
-    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decodedRefreshToken = jwt.verify(
+      refreshTokenValue,
+      process.env.JWT_SECRET
+    );
     let tokenRecord = await Token.findOne({
       where: { userId: user.id, token_type: "refresh_token" },
     });
 
     if (tokenRecord) {
-      tokenRecord.token = refreshToken;
+      tokenRecord.token = refreshTokenValue;
       tokenRecord.expiresIn = new Date(decodedRefreshToken.exp * 1000);
       await tokenRecord.save();
     } else {
       await Token.create({
         userId: user.id,
-        token: refreshToken,
+        token: refreshTokenValue,
         token_type: "refresh_token",
         expiresIn: new Date(decodedRefreshToken.exp * 1000),
       });
     }
 
     return res.status(200).json({
-      message: user.isNewUser ? "Account created successfully with Facebook" : "Login successful",
+      message: user.isNewUser
+        ? "Account created successfully with Facebook"
+        : "Login successful",
       access_token: accessTokenJWT,
-      refresh_token: refreshToken,
+      refresh_token: refreshTokenValue,
       role: user.role,
       verification: user.verified,
       id: user.id,
       isNewUser: user.isNewUser,
     });
-
   } catch (error) {
     console.error("Facebook OAuth Error: ", error);
     if (error.response?.status === 400) {
-      return res.status(400).json({ 
-        message: "Invalid Facebook access token" 
+      return res.status(400).json({
+        message: "Invalid Facebook access token",
       });
     }
-    return res.status(500).json({ 
-      message: "Internal Server Error", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 }
 
 module.exports = {
   signup,
+  setPassword,
+  completeProfile,
+  verifyIdentity,
   verifyEmail,
   resendVerificationCode,
   login,

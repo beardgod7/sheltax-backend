@@ -1,12 +1,15 @@
-const { Profile, BrokerProfile, OwnerProfile, SeekerPreference, UserActivity } = require("./model");
+const {
+  Profile,
+  BrokerProfile,
+  OwnerProfile,
+  SeekerPreference,
+  UserActivity,
+} = require("./model");
 const { User } = require("../Authentication/model");
 const { Op } = require("sequelize");
 
 /**
  * Creates a new profile for a seeker user
- * @param {Object} profileData - The profile data
- * @param {string} userId - The user's ID
- * @returns {Promise<Profile>} - The newly created profile
  */
 async function createProfile(profileData, userId) {
   try {
@@ -23,9 +26,6 @@ async function createProfile(profileData, userId) {
 
 /**
  * Creates a new broker profile
- * @param {Object} profileData - The broker profile data
- * @param {string} userId - The user's ID
- * @returns {Promise<BrokerProfile>} - The newly created broker profile
  */
 async function createBrokerProfile(profileData, userId) {
   try {
@@ -42,9 +42,6 @@ async function createBrokerProfile(profileData, userId) {
 
 /**
  * Creates a new owner profile
- * @param {Object} profileData - The owner profile data
- * @param {string} userId - The user's ID
- * @returns {Promise<OwnerProfile>} - The newly created owner profile
  */
 async function createOwnerProfile(profileData, userId) {
   try {
@@ -61,9 +58,6 @@ async function createOwnerProfile(profileData, userId) {
 
 /**
  * Creates seeker preferences for a profile
- * @param {Object} preferenceData - The preference data
- * @param {string} profileId - The profile's ID
- * @returns {Promise<SeekerPreference>} - The newly created preferences
  */
 async function createSeekerPreference(preferenceData, profileId) {
   try {
@@ -79,56 +73,7 @@ async function createSeekerPreference(preferenceData, profileId) {
 }
 
 /**
- * Finds an owner profile by user ID
- * @param {string} userId - The user's ID
- * @returns {Promise<OwnerProfile|null>} - The owner profile if found
- */
-async function findOwnerProfileByUserId(userId) {
-  try {
-    const ownerProfile = await OwnerProfile.findOne({
-      where: { userId },
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "email", "role", "verified"],
-        },
-      ],
-    });
-    return ownerProfile;
-  } catch (error) {
-    console.error("Error finding owner profile by user ID:", error);
-    throw error;
-  }
-}
-
-/**
- * Finds an owner profile by profile ID
- * @param {string} profileId - The profile's ID
- * @returns {Promise<OwnerProfile|null>} - The owner profile if found
- */
-async function findOwnerProfileById(profileId) {
-  try {
-    const ownerProfile = await OwnerProfile.findByPk(profileId, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "email", "role", "verified"],
-        },
-      ],
-    });
-    return ownerProfile;
-  } catch (error) {
-    console.error("Error finding owner profile by ID:", error);
-    throw error;
-  }
-}
-
-/**
  * Creates user activity record for a profile
- * @param {string} profileId - The profile's ID
- * @returns {Promise<UserActivity>} - The newly created activity record
  */
 async function createUserActivity(profileId) {
   try {
@@ -143,41 +88,7 @@ async function createUserActivity(profileId) {
 }
 
 /**
- * Creates a complete profile with preferences and activity
- * @param {Object} profileData - The profile data
- * @param {Object} preferenceData - The preference data (optional)
- * @param {string} userId - The user's ID
- * @returns {Promise<Object>} - The complete profile with associations
- */
-async function createCompleteProfile(profileData, preferenceData = {}, userId) {
-  try {
-    // Create the main profile
-    const profile = await createProfile(profileData, userId);
-    
-    // Create preferences if provided
-    let preferences = null;
-    if (Object.keys(preferenceData).length > 0) {
-      preferences = await createSeekerPreference(preferenceData, profile.id);
-    }
-    
-    // Create activity record
-    const activity = await createUserActivity(profile.id);
-    
-    return {
-      profile,
-      preferences,
-      activity,
-    };
-  } catch (error) {
-    console.error("Error creating complete profile:", error);
-    throw error;
-  }
-}
-
-/**
  * Finds a profile by user ID with all associations
- * @param {string} userId - The user's ID
- * @returns {Promise<Profile|null>} - The profile with associations if found
  */
 async function findProfileByUserId(userId) {
   try {
@@ -187,7 +98,7 @@ async function findProfileByUserId(userId) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
         },
         {
           model: SeekerPreference,
@@ -210,8 +121,6 @@ async function findProfileByUserId(userId) {
 
 /**
  * Finds a broker profile by user ID
- * @param {string} userId - The user's ID
- * @returns {Promise<BrokerProfile|null>} - The broker profile if found
  */
 async function findBrokerProfileByUserId(userId) {
   try {
@@ -221,7 +130,7 @@ async function findBrokerProfileByUserId(userId) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber", "brokerProfileType", "yearsOfExperience", "bio", "specialization"],
         },
       ],
     });
@@ -233,31 +142,29 @@ async function findBrokerProfileByUserId(userId) {
 }
 
 /**
- * Finds a broker profile by profile ID
- * @param {string} profileId - The profile's ID
- * @returns {Promise<BrokerProfile|null>} - The broker profile if found
+ * Finds an owner profile by user ID
  */
-async function findBrokerProfileById(profileId) {
+async function findOwnerProfileByUserId(userId) {
   try {
-    const brokerProfile = await BrokerProfile.findByPk(profileId, {
+    const ownerProfile = await OwnerProfile.findOne({
+      where: { userId },
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
         },
       ],
     });
-    return brokerProfile;
+    return ownerProfile;
   } catch (error) {
-    console.error("Error finding broker profile by ID:", error);
+    console.error("Error finding owner profile by user ID:", error);
     throw error;
   }
 }
+
 /**
  * Finds a profile by profile ID with all associations
- * @param {string} profileId - The profile's ID
- * @returns {Promise<Profile|null>} - The profile with associations if found
  */
 async function findProfileById(profileId) {
   try {
@@ -266,7 +173,7 @@ async function findProfileById(profileId) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
         },
         {
           model: SeekerPreference,
@@ -288,110 +195,49 @@ async function findProfileById(profileId) {
 }
 
 /**
- * Updates an owner profile
- * @param {string} userId - The user's ID
- * @param {Object} updateData - The data to update
- * @returns {Promise<OwnerProfile|null>} - The updated owner profile
+ * Finds a broker profile by profile ID
  */
-async function updateOwnerProfile(userId, updateData) {
+async function findBrokerProfileById(profileId) {
   try {
-    const [updatedRowsCount] = await OwnerProfile.update(updateData, {
-      where: { userId },
-      returning: true,
-    });
-
-    if (updatedRowsCount === 0) {
-      return null;
-    }
-
-    // Fetch the updated owner profile
-    const updatedOwnerProfile = await findOwnerProfileByUserId(userId);
-    return updatedOwnerProfile;
-  } catch (error) {
-    console.error("Error updating owner profile:", error);
-    throw error;
-  }
-}
-
-/**
- * Updates a broker profile
- * @param {string} userId - The user's ID
- * @param {Object} updateData - The data to update
- * @returns {Promise<BrokerProfile|null>} - The updated broker profile
- */
-async function updateBrokerProfile(userId, updateData) {
-  try {
-    const [updatedRowsCount] = await BrokerProfile.update(updateData, {
-      where: { userId },
-      returning: true,
-    });
-
-    if (updatedRowsCount === 0) {
-      return null;
-    }
-
-    // Fetch the updated broker profile
-    const updatedBrokerProfile = await findBrokerProfileByUserId(userId);
-    return updatedBrokerProfile;
-  } catch (error) {
-    console.error("Error updating broker profile:", error);
-    throw error;
-  }
-}
-
-/**
- * Gets all owner profiles with optional filtering
- * @param {Object} filters - Filter options
- * @returns {Promise<OwnerProfile[]>} - Array of owner profiles
- */
-async function getAllOwnerProfiles(filters = {}) {
-  try {
-    const whereClause = {};
-
-    // Apply filters
-    if (filters.state) {
-      whereClause.stateOfResidence = filters.state;
-    }
-    if (filters.gender) {
-      whereClause.gender = filters.gender;
-    }
-    if (filters.ownerType) {
-      whereClause.ownerType = filters.ownerType;
-    }
-    if (filters.isVerified !== undefined) {
-      whereClause.isVerified = filters.isVerified;
-    }
-    if (filters.isActive !== undefined) {
-      whereClause.isActive = filters.isActive;
-    }
-    if (filters.minRating) {
-      whereClause.averageRating = { [Op.gte]: filters.minRating };
-    }
-
-    const ownerProfiles = await OwnerProfile.findAll({
-      where: whereClause,
+    const brokerProfile = await BrokerProfile.findByPk(profileId, {
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber", "brokerProfileType", "yearsOfExperience", "bio", "specialization"],
         },
       ],
-      order: [["createdAt", "DESC"]],
     });
-
-    return ownerProfiles;
+    return brokerProfile;
   } catch (error) {
-    console.error("Error getting all owner profiles:", error);
+    console.error("Error finding broker profile by ID:", error);
+    throw error;
+  }
+}
+
+/**
+ * Finds an owner profile by profile ID
+ */
+async function findOwnerProfileById(profileId) {
+  try {
+    const ownerProfile = await OwnerProfile.findByPk(profileId, {
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
+        },
+      ],
+    });
+    return ownerProfile;
+  } catch (error) {
+    console.error("Error finding owner profile by ID:", error);
     throw error;
   }
 }
 
 /**
  * Updates a profile
- * @param {string} userId - The user's ID
- * @param {Object} updateData - The data to update
- * @returns {Promise<Profile|null>} - The updated profile
  */
 async function updateProfile(userId, updateData) {
   try {
@@ -404,7 +250,6 @@ async function updateProfile(userId, updateData) {
       return null;
     }
 
-    // Fetch the updated profile with associations
     const updatedProfile = await findProfileByUserId(userId);
     return updatedProfile;
   } catch (error) {
@@ -414,10 +259,51 @@ async function updateProfile(userId, updateData) {
 }
 
 /**
+ * Updates a broker profile
+ */
+async function updateBrokerProfile(userId, updateData) {
+  try {
+    const [updatedRowsCount] = await BrokerProfile.update(updateData, {
+      where: { userId },
+      returning: true,
+    });
+
+    if (updatedRowsCount === 0) {
+      return null;
+    }
+
+    const updatedBrokerProfile = await findBrokerProfileByUserId(userId);
+    return updatedBrokerProfile;
+  } catch (error) {
+    console.error("Error updating broker profile:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates an owner profile
+ */
+async function updateOwnerProfile(userId, updateData) {
+  try {
+    const [updatedRowsCount] = await OwnerProfile.update(updateData, {
+      where: { userId },
+      returning: true,
+    });
+
+    if (updatedRowsCount === 0) {
+      return null;
+    }
+
+    const updatedOwnerProfile = await findOwnerProfileByUserId(userId);
+    return updatedOwnerProfile;
+  } catch (error) {
+    console.error("Error updating owner profile:", error);
+    throw error;
+  }
+}
+
+/**
  * Updates seeker preferences
- * @param {string} profileId - The profile's ID
- * @param {Object} updateData - The data to update
- * @returns {Promise<SeekerPreference|null>} - The updated preferences
  */
 async function updateSeekerPreference(profileId, updateData) {
   try {
@@ -427,12 +313,10 @@ async function updateSeekerPreference(profileId, updateData) {
     });
 
     if (updatedRowsCount === 0) {
-      // Create preferences if they don't exist
       const preferences = await createSeekerPreference(updateData, profileId);
       return preferences;
     }
 
-    // Fetch the updated preferences
     const updatedPreferences = await SeekerPreference.findOne({
       where: { profileId },
     });
@@ -445,9 +329,6 @@ async function updateSeekerPreference(profileId, updateData) {
 
 /**
  * Updates user activity
- * @param {string} profileId - The profile's ID
- * @param {Object} updateData - The data to update
- * @returns {Promise<UserActivity|null>} - The updated activity
  */
 async function updateUserActivity(profileId, updateData) {
   try {
@@ -460,7 +341,6 @@ async function updateUserActivity(profileId, updateData) {
       return null;
     }
 
-    // Fetch the updated activity
     const updatedActivity = await UserActivity.findOne({
       where: { profileId },
     });
@@ -473,26 +353,29 @@ async function updateUserActivity(profileId, updateData) {
 
 /**
  * Deletes a profile and all associated data
- * @param {string} userId - The user's ID
- * @returns {Promise<boolean>} - True if deleted, false if not found
  */
-async function deleteProfile(userId) {
+async function deleteProfile(userId, userRole) {
   try {
-    const profile = await Profile.findOne({ where: { userId } });
-    if (!profile) {
-      return false;
+    switch (userRole) {
+      case "seeker": {
+        const profile = await Profile.findOne({ where: { userId } });
+        if (!profile) return false;
+        await SeekerPreference.destroy({ where: { profileId: profile.id } });
+        await UserActivity.destroy({ where: { profileId: profile.id } });
+        const deletedRowsCount = await Profile.destroy({ where: { userId } });
+        return deletedRowsCount > 0;
+      }
+      case "broker": {
+        const deletedRowsCount = await BrokerProfile.destroy({ where: { userId } });
+        return deletedRowsCount > 0;
+      }
+      case "owner": {
+        const deletedRowsCount = await OwnerProfile.destroy({ where: { userId } });
+        return deletedRowsCount > 0;
+      }
+      default:
+        return false;
     }
-
-    // Delete associated data first
-    await SeekerPreference.destroy({ where: { profileId: profile.id } });
-    await UserActivity.destroy({ where: { profileId: profile.id } });
-    
-    // Delete the profile
-    const deletedRowsCount = await Profile.destroy({
-      where: { userId },
-    });
-    
-    return deletedRowsCount > 0;
   } catch (error) {
     console.error("Error deleting profile:", error);
     throw error;
@@ -501,8 +384,6 @@ async function deleteProfile(userId) {
 
 /**
  * Gets all profiles with optional filtering
- * @param {Object} filters - Filter options
- * @returns {Promise<Profile[]>} - Array of profiles
  */
 async function getAllProfiles(filters = {}) {
   try {
@@ -510,7 +391,6 @@ async function getAllProfiles(filters = {}) {
     const preferenceWhereClause = {};
     const activityWhereClause = {};
 
-    // Apply filters
     if (filters.state) {
       whereClause.stateOfResidence = filters.state;
     }
@@ -531,18 +411,24 @@ async function getAllProfiles(filters = {}) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
         },
         {
           model: SeekerPreference,
           as: "preferences",
-          where: Object.keys(preferenceWhereClause).length > 0 ? preferenceWhereClause : undefined,
+          where:
+            Object.keys(preferenceWhereClause).length > 0
+              ? preferenceWhereClause
+              : undefined,
           required: false,
         },
         {
           model: UserActivity,
           as: "activity",
-          where: Object.keys(activityWhereClause).length > 0 ? activityWhereClause : undefined,
+          where:
+            Object.keys(activityWhereClause).length > 0
+              ? activityWhereClause
+              : undefined,
           required: false,
         },
       ],
@@ -558,28 +444,13 @@ async function getAllProfiles(filters = {}) {
 
 /**
  * Gets all broker profiles with optional filtering
- * @param {Object} filters - Filter options
- * @returns {Promise<BrokerProfile[]>} - Array of broker profiles
  */
 async function getAllBrokerProfiles(filters = {}) {
   try {
     const whereClause = {};
 
-    // Apply filters
-    if (filters.state) {
-      whereClause.stateOfResidence = filters.state;
-    }
-    if (filters.gender) {
-      whereClause.gender = filters.gender;
-    }
     if (filters.isVerified !== undefined) {
       whereClause.isVerified = filters.isVerified;
-    }
-    if (filters.isActive !== undefined) {
-      whereClause.isActive = filters.isActive;
-    }
-    if (filters.minRating) {
-      whereClause.averageRating = { [Op.gte]: filters.minRating };
     }
 
     const brokerProfiles = await BrokerProfile.findAll({
@@ -588,7 +459,7 @@ async function getAllBrokerProfiles(filters = {}) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber", "brokerProfileType", "yearsOfExperience", "bio", "specialization"],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -600,12 +471,39 @@ async function getAllBrokerProfiles(filters = {}) {
     throw error;
   }
 }
+
+/**
+ * Gets all owner profiles with optional filtering
+ */
+async function getAllOwnerProfiles(filters = {}) {
+  try {
+    const whereClause = {};
+
+    if (filters.isVerified !== undefined) {
+      whereClause.isVerified = filters.isVerified;
+    }
+
+    const ownerProfiles = await OwnerProfile.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return ownerProfiles;
+  } catch (error) {
+    console.error("Error getting all owner profiles:", error);
+    throw error;
+  }
+}
+
 /**
  * Updates profile verification status
- * @param {string} userId - The user's ID
- * @param {boolean} isVerified - Verification status
- * @param {Object} verificationDocuments - Verification documents (optional)
- * @returns {Promise<UserActivity|null>} - The updated activity record
  */
 async function updateVerificationStatus(userId, isVerified, verificationDocuments = null) {
   try {
@@ -629,10 +527,6 @@ async function updateVerificationStatus(userId, isVerified, verificationDocument
 
 /**
  * Updates broker profile verification status
- * @param {string} userId - The user's ID
- * @param {boolean} isVerified - Verification status
- * @param {Object} verificationDocuments - Verification documents (optional)
- * @returns {Promise<BrokerProfile|null>} - The updated broker profile
  */
 async function updateBrokerVerificationStatus(userId, isVerified, verificationDocuments = null) {
   try {
@@ -651,10 +545,6 @@ async function updateBrokerVerificationStatus(userId, isVerified, verificationDo
 
 /**
  * Updates owner profile verification status
- * @param {string} userId - The user's ID
- * @param {boolean} isVerified - Verification status
- * @param {Object} verificationDocuments - Verification documents (optional)
- * @returns {Promise<OwnerProfile|null>} - The updated owner profile
  */
 async function updateOwnerVerificationStatus(userId, isVerified, verificationDocuments = null) {
   try {
@@ -672,118 +562,60 @@ async function updateOwnerVerificationStatus(userId, isVerified, verificationDoc
 }
 
 /**
- * Checks if broker profile is complete
- * @param {Object} profileData - The broker profile data
- * @returns {boolean} - True if profile is complete
+ * Checks if seeker profile is complete
  */
-function checkBrokerProfileCompletion(profileData) {
+function checkProfileCompletion(profileData) {
   const requiredFields = [
-    "firstName",
-    "surname",
-    "phoneNumber",
     "emailAddress",
     "stateOfResidence",
     "gender",
     "dateOfBirth",
   ];
 
-  return requiredFields.every(field => 
-    profileData[field] && profileData[field].toString().trim() !== ""
+  return requiredFields.every(
+    (field) =>
+      profileData[field] && profileData[field].toString().trim() !== ""
+  );
+}
+
+/**
+ * Checks if broker profile is complete
+ */
+function checkBrokerProfileCompletion(profileData) {
+  const requiredFields = ["emailAddress"];
+
+  return requiredFields.every(
+    (field) =>
+      profileData[field] && profileData[field].toString().trim() !== ""
   );
 }
 
 /**
  * Checks if owner profile is complete
- * @param {Object} profileData - The owner profile data
- * @returns {boolean} - True if profile is complete
  */
 function checkOwnerProfileCompletion(profileData) {
   const requiredFields = [
-    "firstName",
-    "surname",
-    "phoneNumber",
     "emailAddress",
-    "stateOfResidence",
-    "gender",
-    "dateOfBirth",
+    "location",
+    "propertyTypes",
+    "listingIntent",
     "ownerType",
   ];
 
-  return requiredFields.every(field => 
-    profileData[field] && profileData[field].toString().trim() !== ""
-  );
-}
-/**
- * Checks if profile is complete
- * @param {Object} profileData - The profile data
- * @returns {boolean} - True if profile is complete
- */
-function checkProfileCompletion(profileData) {
-  const requiredFields = [
-    "firstName",
-    "surname",
-    "phoneNumber",
-    "emailAddress",
-    "stateOfResidence",
-    "gender",
-    "dateOfBirth",
-  ];
-
-  return requiredFields.every(field => 
-    profileData[field] && profileData[field].toString().trim() !== ""
-  );
-}
-
-/**
- * Search broker profiles
- * @param {string} searchTerm - Search term
- * @param {Object} filters - Additional filters
- * @returns {Promise<BrokerProfile[]>} - Search results
- */
-async function searchBrokerProfiles(searchTerm, filters = {}) {
-  try {
-    const searchCondition = {
-      [Op.or]: [
-        { firstName: { [Op.iLike]: `%${searchTerm}%` } },
-        { surname: { [Op.iLike]: `%${searchTerm}%` } },
-        { agencyCompanyName: { [Op.iLike]: `%${searchTerm}%` } },
-        { stateOfResidence: { [Op.iLike]: `%${searchTerm}%` } },
-        { city: { [Op.iLike]: `%${searchTerm}%` } },
-      ],
-    };
-
-    const brokerProfiles = await BrokerProfile.findAll({
-      where: searchCondition,
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "email", "role", "verified"],
-        },
-      ],
-      limit: filters.limit || 20,
-      order: [["createdAt", "DESC"]],
-    });
-
-    return brokerProfiles;
-  } catch (error) {
-    console.error("Error searching broker profiles:", error);
-    throw error;
-  }
+  return requiredFields.every((field) => {
+    const value = profileData[field];
+    if (Array.isArray(value)) return value.length > 0;
+    return value && value.toString().trim() !== "";
+  });
 }
 
 /**
  * Search profiles
- * @param {string} searchTerm - Search term
- * @param {Object} filters - Additional filters
- * @returns {Promise<Profile[]>} - Search results
  */
 async function searchProfiles(searchTerm, filters = {}) {
   try {
     const searchCondition = {
       [Op.or]: [
-        { firstName: { [Op.iLike]: `%${searchTerm}%` } },
-        { surname: { [Op.iLike]: `%${searchTerm}%` } },
         { stateOfResidence: { [Op.iLike]: `%${searchTerm}%` } },
       ],
     };
@@ -794,7 +626,7 @@ async function searchProfiles(searchTerm, filters = {}) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
         },
         {
           model: SeekerPreference,
@@ -819,20 +651,45 @@ async function searchProfiles(searchTerm, filters = {}) {
 }
 
 /**
+ * Search broker profiles
+ */
+async function searchBrokerProfiles(searchTerm, filters = {}) {
+  try {
+    const searchCondition = {
+      [Op.or]: [
+        { agencyCompanyName: { [Op.iLike]: `%${searchTerm}%` } },
+      ],
+    };
+
+    const brokerProfiles = await BrokerProfile.findAll({
+      where: searchCondition,
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber", "brokerProfileType", "yearsOfExperience", "bio", "specialization"],
+        },
+      ],
+      limit: filters.limit || 20,
+      order: [["createdAt", "DESC"]],
+    });
+
+    return brokerProfiles;
+  } catch (error) {
+    console.error("Error searching broker profiles:", error);
+    throw error;
+  }
+}
+
+/**
  * Search owner profiles
- * @param {string} searchTerm - Search term
- * @param {Object} filters - Additional filters
- * @returns {Promise<OwnerProfile[]>} - Search results
  */
 async function searchOwnerProfiles(searchTerm, filters = {}) {
   try {
     const searchCondition = {
       [Op.or]: [
-        { firstName: { [Op.iLike]: `%${searchTerm}%` } },
-        { surname: { [Op.iLike]: `%${searchTerm}%` } },
-        { companyName: { [Op.iLike]: `%${searchTerm}%` } },
-        { stateOfResidence: { [Op.iLike]: `%${searchTerm}%` } },
-        { city: { [Op.iLike]: `%${searchTerm}%` } },
+        { location: { [Op.iLike]: `%${searchTerm}%` } },
+        { ownerType: { [Op.iLike]: `%${searchTerm}%` } },
       ],
     };
 
@@ -842,7 +699,7 @@ async function searchOwnerProfiles(searchTerm, filters = {}) {
         {
           model: User,
           as: "user",
-          attributes: ["id", "email", "role", "verified"],
+          attributes: ["id", "email", "role", "verified", "firstName", "surname", "phoneNumber"],
         },
       ],
       limit: filters.limit || 20,
@@ -858,10 +715,6 @@ async function searchOwnerProfiles(searchTerm, filters = {}) {
 
 /**
  * Increment activity counters
- * @param {string} userId - The user's ID
- * @param {string} activityType - Type of activity (inquiries, applications, viewedProperties, savedProperties)
- * @param {number} increment - Amount to increment (default: 1)
- * @returns {Promise<UserActivity|null>} - The updated activity record
  */
 async function incrementActivity(userId, activityType, increment = 1) {
   try {
@@ -870,13 +723,19 @@ async function incrementActivity(userId, activityType, increment = 1) {
       return null;
     }
 
-    const validActivityTypes = ['totalInquiries', 'totalApplications', 'totalViewedProperties', 'totalSavedProperties'];
+    const validActivityTypes = [
+      "totalInquiries",
+      "totalApplications",
+      "totalViewedProperties",
+      "totalSavedProperties",
+    ];
     if (!validActivityTypes.includes(activityType)) {
       throw new Error(`Invalid activity type: ${activityType}`);
     }
 
-    // Get current activity or create if doesn't exist
-    let activity = await UserActivity.findOne({ where: { profileId: profile.id } });
+    let activity = await UserActivity.findOne({
+      where: { profileId: profile.id },
+    });
     if (!activity) {
       activity = await createUserActivity(profile.id);
     }
@@ -900,7 +759,6 @@ module.exports = {
   createOwnerProfile,
   createSeekerPreference,
   createUserActivity,
-  createCompleteProfile,
   findProfileByUserId,
   findProfileById,
   findBrokerProfileByUserId,

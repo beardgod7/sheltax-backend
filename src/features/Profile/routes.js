@@ -7,6 +7,8 @@ const {
   createSeekerProfile,
   createBrokerProfileHandler,
   createOwnerProfileHandler,
+  verifyOwnerIdentity,
+  verifyBrokerIdentity,
   createSeekerPreferences,
   updateSeekerPreferences,
   getMyProfile,
@@ -23,25 +25,56 @@ const {
 const router = express.Router();
 
 // Public routes
-router.get("/public/:id", getProfileById); // Get public profile by ID (requires type query param: seeker/Agent/Owner)
-router.get("/role/:role", getProfilesByUserRole); // Get profiles by role (Agent/Owner/seeker)
+router.get("/public/:id", getProfileById);
+router.get("/role/:role", getProfilesByUserRole);
 
 // Protected routes (require authentication)
-router.use(authenticate); // Apply authentication middleware to all routes below
+router.use(authenticate);
 
 // Profile creation routes (separate for each type)
-router.post("/seeker", authorize(["seeker"]), createSeekerProfile); // Create seeker profile
-router.post("/broker", authorize(["broker"]), createBrokerProfileHandler); // Create broker profile
-router.post("/owner", authorize(["owner"]), createOwnerProfileHandler); // Create owner profile
+router.post("/seeker", authorize(["seeker"]), createSeekerProfile);
+router.post("/broker", authorize(["broker"]), createBrokerProfileHandler);
+router.post("/owner", authorize(["owner"]), createOwnerProfileHandler);
+
+// Identity verification routes (Step 3 for owner/broker)
+router.post(
+  "/owner/verify-identity",
+  authorize(["owner"]),
+  upload.fields([
+    { name: "profilePicture", maxCount: 1 },
+    { name: "governmentId", maxCount: 1 },
+    { name: "ninCacDocument", maxCount: 1 },
+  ]),
+  verifyOwnerIdentity
+);
+
+router.post(
+  "/broker/verify-identity",
+  authorize(["broker"]),
+  upload.fields([
+    { name: "profilePicture", maxCount: 1 },
+    { name: "governmentId", maxCount: 1 },
+    { name: "ninCacDocument", maxCount: 1 },
+  ]),
+  verifyBrokerIdentity
+);
 
 // Seeker preferences routes (only for seekers)
-router.post("/seeker/preferences", authorize(["seeker"]), createSeekerPreferences); // Create seeker preferences
-router.put("/seeker/preferences", authorize(["seeker"]), updateSeekerPreferences); // Update seeker preferences
+router.post(
+  "/seeker/preferences",
+  authorize(["seeker"]),
+  createSeekerPreferences
+);
+router.put(
+  "/seeker/preferences",
+  authorize(["seeker"]),
+  updateSeekerPreferences
+);
 
 // General profile management
-router.get("/me", getMyProfile); // Get own profile (works for all types)
-router.put("/", updateUserProfile); // Update own profile (works for all types)
-router.delete("/", deleteUserProfile); // Delete own profile
+router.get("/me", getMyProfile);
+router.put("/", updateUserProfile);
+router.delete("/", deleteUserProfile);
 
 // Profile picture upload
 router.post("/picture", upload.single("profilePicture"), uploadProfilePicture);
@@ -50,11 +83,11 @@ router.post("/picture", upload.single("profilePicture"), uploadProfilePicture);
 router.post("/verification-documents", uploadVerificationDocuments);
 
 // Admin routes
-router.get("/", authorize(["admin", "super_admin"]), getAllUserProfiles); // Get all profiles
+router.get("/", authorize(["admin", "super_admin"]), getAllUserProfiles);
 router.patch(
   "/verify/:userId",
   authorize(["admin", "super_admin"]),
   updateProfileVerification
-); // Update verification status
+);
 
 module.exports = router;

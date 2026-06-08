@@ -11,8 +11,29 @@
  *         email:
  *           type: string
  *           format: email
+ *         firstName:
+ *           type: string
+ *         surname:
+ *           type: string
+ *         phoneNumber:
+ *           type: string
  *         username:
  *           type: string
+ *         ninVerification:
+ *           type: string
+ *           description: NIN verification (optional, for seekers)
+ *         brokerProfileType:
+ *           type: string
+ *           description: Broker profile type (for brokers only)
+ *         yearsOfExperience:
+ *           type: integer
+ *           description: Years of experience (for brokers only)
+ *         bio:
+ *           type: string
+ *           description: Bio (for brokers only)
+ *         specialization:
+ *           type: string
+ *           description: Specialization (for brokers only)
  *         googleId:
  *           type: string
  *           description: Google account ID
@@ -43,7 +64,177 @@
  *
  * /auth/signup:
  *   post:
- *     summary: Register a new user
+ *     summary: Register a new user (Step 1 - no password)
+ *     description: |
+ *       Creates a new user account. Password is NOT set at this stage.
+ *       After signup, user receives an OTP via email for verification.
+ *       Flow: signup -> verify OTP -> set password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - role
+ *               - firstName
+ *               - surname
+ *               - phoneNumber
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               role:
+ *                 type: string
+ *                 enum: [seeker, owner, broker]
+ *                 description: |
+ *                   User role determines access level and profile type:
+ *                   - `seeker` - Property seeker/tenant
+ *                   - `owner` - Property owner
+ *                   - `broker` - Real estate broker/agent
+ *               firstName:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *               surname:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Phone number (10-15 digits, optional + prefix)
+ *               ninVerification:
+ *                 type: string
+ *                 description: NIN verification (optional, for seekers)
+ *               brokerProfileType:
+ *                 type: string
+ *                 description: Required when role is broker
+ *               yearsOfExperience:
+ *                 type: integer
+ *                 description: Optional, for brokers
+ *               bio:
+ *                 type: string
+ *                 description: Optional, for brokers (max 2000 chars)
+ *               specialization:
+ *                 type: string
+ *                 description: Optional, for brokers
+ *     responses:
+ *       201:
+ *         description: User registered successfully, OTP sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 userId:
+ *                   type: string
+ *                   format: uuid
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Account already exists
+ *
+ * /auth/complete-profile:
+ *   post:
+ *     summary: "Step 2: Complete profile (Owner/Broker only)"
+ *     description: |
+ *       Owner fields: location, propertyTypes, listingIntent, ownerType
+ *       Broker fields: agencyCompanyName, companyYearsOfExistence, operatingLocations, companySize, portfolioSummary
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               location:
+ *                 type: string
+ *                 description: Owner only - state/area
+ *               propertyTypes:
+ *                 type: string
+ *                 description: Owner only - apartment, house, etc.
+ *               listingIntent:
+ *                 type: string
+ *                 description: Owner only - rent/sale/both
+ *               ownerType:
+ *                 type: string
+ *                 description: Owner only - who do you identify as
+ *               agencyCompanyName:
+ *                 type: string
+ *                 description: Broker only
+ *               companyYearsOfExistence:
+ *                 type: string
+ *                 description: Broker only
+ *               operatingLocations:
+ *                 type: string
+ *                 description: Broker only (required)
+ *               companySize:
+ *                 type: string
+ *                 description: Broker only
+ *               portfolioSummary:
+ *                 type: string
+ *                 description: Broker only
+ *     responses:
+ *       200:
+ *         description: Profile saved. Proceed to verify-identity.
+ *       400:
+ *         description: Validation error or wrong role
+ *       404:
+ *         description: User not found
+ *
+ * /auth/verify-identity:
+ *   post:
+ *     summary: "Step 3: Upload identity documents (Owner/Broker only)"
+ *     description: Upload profile picture, government ID, and NIN/CAC document. Sends OTP after upload.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *               profilePicture:
+ *                 type: string
+ *                 format: binary
+ *                 description: Profile picture or company logo
+ *               governmentId:
+ *                 type: string
+ *                 format: binary
+ *                 description: Valid government ID (passport, driver's license, national ID)
+ *               ninCacDocument:
+ *                 type: string
+ *                 format: binary
+ *                 description: NIN or CAC document (if company)
+ *     responses:
+ *       200:
+ *         description: Documents uploaded. OTP sent to email.
+ *       400:
+ *         description: Wrong role
+ *       404:
+ *         description: User not found
+ *
+ * /auth/set-password:
+ *   post:
+ *     summary: Set password after OTP verification (Step 3)
+ *     description: |
+ *       Sets the user's password after they have verified their email via OTP.
+ *       User must be verified before calling this endpoint.
+ *       Returns access and refresh tokens on success.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -54,9 +245,8 @@
  *             required:
  *               - email
  *               - password
+ *               - confirmPassword
  *             properties:
- *               username:
- *                 type: string
  *               email:
  *                 type: string
  *                 format: email
@@ -64,18 +254,13 @@
  *                 type: string
  *                 format: password
  *                 minLength: 8
- *               role:
+ *               confirmPassword:
  *                 type: string
- *                 enum: [seeker, owner, broker, admin]
- *                 default: seeker
- *                 description: |
- *                   User role determines access level and profile type:
- *                   - `seeker` - Property seeker/tenant looking for properties (default)
- *                   - `owner` - Property owner who lists properties for rent or sale
- *                   - `broker` - Real estate broker/agent who manages listings on behalf of owners
+ *                 format: password
+ *                 description: Must match password
  *     responses:
- *       201:
- *         description: User registered successfully
+ *       200:
+ *         description: Password set successfully, user is logged in
  *         content:
  *           application/json:
  *             schema:
@@ -83,10 +268,52 @@
  *               properties:
  *                 message:
  *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                 access_token:
+ *                   type: string
+ *                 refresh_token:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 verification:
+ *                   type: boolean
+ *                 id:
+ *                   type: string
+ *                   format: uuid
  *       400:
- *         $ref: '#/components/responses/BadRequestError'
+ *         description: Validation error or password already set
+ *       403:
+ *         description: Account not verified
+ *       404:
+ *         description: User not found
+ *
+ * /auth/verify/{code}:
+ *   get:
+ *     summary: Verify email with OTP code (Step 2)
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 6-digit OTP verification code
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *       400:
+ *         description: Invalid or expired verification code
+ *       404:
+ *         description: User not found
  *
  * /auth/google-oauth:
  *   post:
@@ -126,16 +353,8 @@
  *                   type: string
  *                 isNewUser:
  *                   type: boolean
- *                   description: Indicates if this is a new user registration
  *       400:
  *         description: Invalid Google token or unverified email
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  *
@@ -232,6 +451,9 @@
  * /auth/login:
  *   post:
  *     summary: Login user
+ *     description: |
+ *       Authenticates user with email/username and password.
+ *       User must have set their password (via /auth/set-password) before login.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -260,21 +482,36 @@
  *               properties:
  *                 message:
  *                   type: string
- *                 token:
+ *                 access_token:
  *                   type: string
- *                 refreshToken:
+ *                 refresh_token:
  *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                 role:
+ *                   type: string
+ *                 verification:
+ *                   type: boolean
+ *                 id:
+ *                   type: string
  *       401:
- *         $ref: '#/components/responses/UnauthorizedError'
+ *         description: Invalid credentials
+ *       403:
+ *         description: Account not verified or password not set
  *
  * /auth/logout:
  *   post:
  *     summary: Logout user
  *     tags: [Authentication]
- *     security:
- *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refresh_token
+ *             properties:
+ *               refresh_token:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Logout successful
@@ -302,24 +539,10 @@
  *             schema:
  *               type: object
  *               properties:
- *                 token:
+ *                 access_token:
  *                   type: string
- *
- * /auth/verify/{code}:
- *   get:
- *     summary: Verify email with verification code
- *     tags: [Authentication]
- *     parameters:
- *       - in: path
- *         name: code
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Email verified successfully
- *       400:
- *         $ref: '#/components/responses/BadRequestError'
+ *                 refresh_token:
+ *                   type: string
  *
  * /auth/resend-verification:
  *   post:
@@ -359,7 +582,7 @@
  *                 format: email
  *     responses:
  *       200:
- *         description: Password reset email sent
+ *         description: Password reset code sent
  *
  * /auth/reset-password:
  *   post:

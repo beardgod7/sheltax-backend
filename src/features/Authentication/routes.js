@@ -1,8 +1,10 @@
 const express = require("express");
 const leakyBucketLimiter = require("../../middleware/ratelimitter");
-//const { validateJwt } = require("../../middlewares/auth");
 const {
   signup,
+  setPassword,
+  completeProfile,
+  verifyIdentity,
   login,
   refreshToken,
   logout,
@@ -18,16 +20,23 @@ const {
   twitterOAuth,
   facebookOAuth,
 } = require("./controller");
+const { upload } = require("../../middleware/upload");
 const router = express.Router();
 
-// Signup routes
+// Signup routes (multi-step registration)
 router.post("/signup", signup);
+router.post("/complete-profile", completeProfile);
+router.post("/verify-identity", upload.fields([
+  { name: "profilePicture", maxCount: 1 },
+  { name: "governmentId", maxCount: 1 },
+  { name: "ninCacDocument", maxCount: 1 },
+]), verifyIdentity);
+router.post("/set-password", setPassword);
 router.post("/google-oauth", googleOAuth);
 router.post("/twitter-oauth", twitterOAuth);
 router.post("/facebook-oauth", facebookOAuth);
 router.patch("/approve/:id", approveUser);
 
-//router.post("/admin-signup", validateJwt(["SuperAdmin"]), AdminSignup);
 router.get("/all-user", getUsers);
 router.post("/login", leakyBucketLimiter, login);
 router.post("/logout", logout);

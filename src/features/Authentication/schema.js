@@ -1,11 +1,50 @@
 const Joi = require("joi");
 
-// Signup schema
+// Signup schema - new flow: no password at signup
 const signupSchema = Joi.object({
-  username: Joi.string().optional(),
+  email: Joi.string().email().required(),
+  role: Joi.string().valid("seeker", "owner", "broker", "admin").required(),
+  firstName: Joi.string().min(2).max(50).required(),
+  surname: Joi.string().min(2).max(50).required(),
+  phoneNumber: Joi.string().pattern(/^[+]?[\d\s\-\(\)]{10,15}$/).required(),
+  ninVerification: Joi.string().optional().allow("", null),
+  // Broker-specific fields
+  brokerProfileType: Joi.when("role", {
+    is: "broker",
+    then: Joi.string().required(),
+    otherwise: Joi.string().optional().allow("", null),
+  }),
+  yearsOfExperience: Joi.number().integer().min(0).optional().allow(null),
+  bio: Joi.string().max(2000).optional().allow("", null),
+  specialization: Joi.string().max(200).optional().allow("", null),
+});
+
+// Set password schema - used after OTP verification
+const setPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
-  role: Joi.string().valid("seeker", "owner", "broker", "admin").default("seeker"),
+  confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
+    "any.only": "Passwords do not match",
+  }),
+});
+
+// Complete profile schema - Owner step 2
+const completeOwnerProfileSchema = Joi.object({
+  email: Joi.string().email().required(),
+  location: Joi.string().required(),
+  propertyTypes: Joi.string().required(),
+  listingIntent: Joi.string().required(),
+  ownerType: Joi.string().required(),
+});
+
+// Complete profile schema - Broker step 2
+const completeBrokerProfileSchema = Joi.object({
+  email: Joi.string().email().required(),
+  agencyCompanyName: Joi.string().max(200).optional().allow("", null),
+  companyYearsOfExistence: Joi.string().optional().allow("", null),
+  operatingLocations: Joi.string().required(),
+  companySize: Joi.string().optional().allow("", null),
+  portfolioSummary: Joi.string().max(2000).optional().allow("", null),
 });
 
 // Signin schema
@@ -61,6 +100,9 @@ const facebookOAuthSchema = Joi.object({
 
 module.exports = {
   signupSchema,
+  setPasswordSchema,
+  completeOwnerProfileSchema,
+  completeBrokerProfileSchema,
   signinSchema,
   refreshTokenSchema,
   forgotPasswordSchema,

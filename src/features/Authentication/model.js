@@ -19,11 +19,96 @@ const User = sequelize.define(
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: true, // Allow null for Google OAuth users
+      allowNull: true, // Password is set AFTER OTP verification
     },
     username: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    surname: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    phoneNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    ninVerification: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    brokerProfileType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    yearsOfExperience: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    bio: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    specialization: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // Owner profile fields (step 2)
+    location: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    propertyTypes: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    listingIntent: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    ownerType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // Broker organization fields (step 2)
+    agencyCompanyName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    companyYearsOfExistence: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    operatingLocations: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    companySize: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    portfolioSummary: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    // Identity verification fields (step 3 for owner/broker)
+    governmentId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    ninCacDocument: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // Registration progress tracking
+    registrationStep: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
     },
     googleId: {
       type: DataTypes.STRING,
@@ -98,7 +183,7 @@ const User = sequelize.define(
     ],
     hooks: {
       beforeCreate: async (user) => {
-        // Only hash password if it exists (not for Google OAuth users)
+        // Only hash password if it exists (not for OAuth or new signup flow)
         if (user.password) {
           await Userhash.hashPassword(user);
         }

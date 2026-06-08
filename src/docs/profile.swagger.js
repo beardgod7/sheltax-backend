@@ -11,15 +11,10 @@
  *         userId:
  *           type: string
  *           format: uuid
- *         firstName:
- *           type: string
- *         surname:
- *           type: string
- *         phoneNumber:
- *           type: string
  *         emailAddress:
  *           type: string
  *           format: email
+ *           description: Auto-populated from user registration
  *         stateOfResidence:
  *           type: string
  *         gender:
@@ -28,8 +23,6 @@
  *         dateOfBirth:
  *           type: string
  *           format: date
- *         ninVerification:
- *           type: string
  *         profilePicture:
  *           type: string
  *         isComplete:
@@ -40,6 +33,23 @@
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *             email:
+ *               type: string
+ *             firstName:
+ *               type: string
+ *             surname:
+ *               type: string
+ *             phoneNumber:
+ *               type: string
+ *             role:
+ *               type: string
+ *             verified:
+ *               type: boolean
  *
  *     BrokerProfile:
  *       type: object
@@ -50,34 +60,28 @@
  *         userId:
  *           type: string
  *           format: uuid
- *         firstName:
- *           type: string
- *         surname:
- *           type: string
- *         phoneNumber:
- *           type: string
  *         emailAddress:
  *           type: string
  *           format: email
  *           description: Auto-populated from registration
- *         stateOfResidence:
+ *         agencyCompanyName:
  *           type: string
- *         gender:
+ *         companyYearsOfExistence:
  *           type: string
- *           enum: [male, female, other]
- *         dateOfBirth:
+ *         operatingLocations:
+ *           type: array
+ *           items:
+ *             type: string
+ *         companySize:
  *           type: string
- *           format: date
- *         ninVerification:
+ *         portfolioSummary:
  *           type: string
  *         profilePicture:
  *           type: string
- *         agencyCompanyName:
+ *         governmentId:
  *           type: string
- *           description: Agency/Company Name (Optional)
- *         agentLicenseNumber:
+ *         ninCacDocument:
  *           type: string
- *           description: Agent License Number (Optional)
  *         isVerified:
  *           type: boolean
  *         isComplete:
@@ -88,6 +92,31 @@
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *             email:
+ *               type: string
+ *             firstName:
+ *               type: string
+ *             surname:
+ *               type: string
+ *             phoneNumber:
+ *               type: string
+ *             brokerProfileType:
+ *               type: string
+ *             yearsOfExperience:
+ *               type: integer
+ *             bio:
+ *               type: string
+ *             specialization:
+ *               type: string
+ *             role:
+ *               type: string
+ *             verified:
+ *               type: boolean
  *
  *     OwnerProfile:
  *       type: object
@@ -98,34 +127,26 @@
  *         userId:
  *           type: string
  *           format: uuid
- *         firstName:
- *           type: string
- *         surname:
- *           type: string
- *         phoneNumber:
- *           type: string
  *         emailAddress:
  *           type: string
  *           format: email
  *           description: Auto-populated from registration
- *         stateOfResidence:
+ *         location:
  *           type: string
- *         gender:
+ *         propertyTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *         listingIntent:
  *           type: string
- *           enum: [male, female, other]
- *         dateOfBirth:
- *           type: string
- *           format: date
- *         ninVerification:
+ *         ownerType:
  *           type: string
  *         profilePicture:
  *           type: string
- *         agencyCompanyName:
+ *         governmentId:
  *           type: string
- *           description: Agency/Company Name (Optional)
- *         agentLicenseNumber:
+ *         ninCacDocument:
  *           type: string
- *           description: Agent License Number (Optional)
  *         isVerified:
  *           type: boolean
  *         isComplete:
@@ -136,6 +157,23 @@
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *             email:
+ *               type: string
+ *             firstName:
+ *               type: string
+ *             surname:
+ *               type: string
+ *             phoneNumber:
+ *               type: string
+ *             role:
+ *               type: string
+ *             verified:
+ *               type: boolean
  *
  *     SeekerPreference:
  *       type: object
@@ -181,7 +219,8 @@
  *
  * /profile/seeker:
  *   post:
- *     summary: Create seeker profile
+ *     summary: Create seeker profile (Step 2 for seekers)
+ *     description: Complete seeker profile with personal details after signup and password set
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
@@ -192,19 +231,10 @@
  *           schema:
  *             type: object
  *             required:
- *               - firstName
- *               - surname
- *               - phoneNumber
  *               - stateOfResidence
  *               - gender
  *               - dateOfBirth
  *             properties:
- *               firstName:
- *                 type: string
- *               surname:
- *                 type: string
- *               phoneNumber:
- *                 type: string
  *               stateOfResidence:
  *                 type: string
  *               gender:
@@ -213,8 +243,6 @@
  *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               ninVerification:
- *                 type: string
  *     responses:
  *       201:
  *         description: Seeker profile created successfully
@@ -230,9 +258,12 @@
  *       409:
  *         description: Profile already exists
  *
- * /profile/broker:
+ * /profile/owner:
  *   post:
- *     summary: Create broker profile
+ *     summary: Create owner profile (Step 2 for owners)
+ *     description: |
+ *       Complete owner profile with property information.
+ *       Called after signup, OTP verification, and password set.
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
@@ -243,33 +274,118 @@
  *           schema:
  *             type: object
  *             required:
- *               - firstName
- *               - surname
- *               - phoneNumber
- *               - stateOfResidence
- *               - gender
- *               - dateOfBirth
+ *               - location
+ *               - propertyTypes
+ *               - listingIntent
+ *               - ownerType
  *             properties:
- *               firstName:
+ *               location:
  *                 type: string
- *               surname:
+ *                 description: Property/owner location
+ *               propertyTypes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of property types owned
+ *               listingIntent:
  *                 type: string
- *               phoneNumber:
+ *                 description: Intent for listing (e.g., rent, sell, both)
+ *               ownerType:
  *                 type: string
- *               stateOfResidence:
+ *                 description: Type of owner (e.g., individual, company)
+ *     responses:
+ *       201:
+ *         description: Owner profile created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   $ref: '#/components/schemas/OwnerProfile'
+ *       409:
+ *         description: Owner profile already exists
+ *
+ * /profile/owner/verify-identity:
+ *   post:
+ *     summary: Owner identity verification (Step 3 for owners)
+ *     description: |
+ *       Upload verification documents for owner identity.
+ *       Accepts multipart form data with profile picture, government ID, and NIN/CAC document.
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profilePicture:
  *                 type: string
- *               gender:
+ *                 format: binary
+ *                 description: Profile picture file
+ *               governmentId:
  *                 type: string
- *                 enum: [male, female, other]
- *               dateOfBirth:
+ *                 format: binary
+ *                 description: Government-issued ID file
+ *               ninCacDocument:
  *                 type: string
- *                 format: date
- *               ninVerification:
- *                 type: string
+ *                 format: binary
+ *                 description: NIN or CAC document file
+ *     responses:
+ *       200:
+ *         description: Identity verification documents uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   $ref: '#/components/schemas/OwnerProfile'
+ *       400:
+ *         description: No verification documents provided
+ *       404:
+ *         description: Owner profile not found
+ *
+ * /profile/broker:
+ *   post:
+ *     summary: Create broker profile (Step 2 for brokers)
+ *     description: |
+ *       Complete broker profile with company/agency information.
+ *       Called after signup, OTP verification, and password set.
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
  *               agencyCompanyName:
  *                 type: string
- *               agentLicenseNumber:
+ *                 description: Agency or company name
+ *               companyYearsOfExistence:
  *                 type: string
+ *                 description: How long the company has existed
+ *               operatingLocations:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of operating locations
+ *               companySize:
+ *                 type: string
+ *                 description: Size of the company
+ *               portfolioSummary:
+ *                 type: string
+ *                 description: Summary of portfolio (max 2000 chars)
  *     responses:
  *       201:
  *         description: Broker profile created successfully
@@ -285,49 +401,37 @@
  *       409:
  *         description: Broker profile already exists
  *
- * /profile/owner:
+ * /profile/broker/verify-identity:
  *   post:
- *     summary: Create owner profile
+ *     summary: Broker identity verification (Step 3 for brokers)
+ *     description: |
+ *       Upload verification documents for broker identity.
+ *       Accepts multipart form data with profile picture, government ID, and NIN/CAC document.
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - firstName
- *               - surname
- *               - phoneNumber
- *               - stateOfResidence
- *               - gender
- *               - dateOfBirth
  *             properties:
- *               firstName:
+ *               profilePicture:
  *                 type: string
- *               surname:
+ *                 format: binary
+ *                 description: Profile picture file
+ *               governmentId:
  *                 type: string
- *               phoneNumber:
+ *                 format: binary
+ *                 description: Government-issued ID file
+ *               ninCacDocument:
  *                 type: string
- *               stateOfResidence:
- *                 type: string
- *               gender:
- *                 type: string
- *                 enum: [male, female, other]
- *               dateOfBirth:
- *                 type: string
- *                 format: date
- *               ninVerification:
- *                 type: string
- *               agencyCompanyName:
- *                 type: string
- *               agentLicenseNumber:
- *                 type: string
+ *                 format: binary
+ *                 description: NIN or CAC document file
  *     responses:
- *       201:
- *         description: Owner profile created successfully
+ *       200:
+ *         description: Identity verification documents uploaded successfully
  *         content:
  *           application/json:
  *             schema:
@@ -336,9 +440,11 @@
  *                 message:
  *                   type: string
  *                 profile:
- *                   $ref: '#/components/schemas/OwnerProfile'
- *       409:
- *         description: Owner profile already exists
+ *                   $ref: '#/components/schemas/BrokerProfile'
+ *       400:
+ *         description: No verification documents provided
+ *       404:
+ *         description: Broker profile not found
  *
  * /profile/seeker/preferences:
  *   post:
@@ -382,15 +488,6 @@
  *     responses:
  *       201:
  *         description: Seeker preferences created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 preferences:
- *                   $ref: '#/components/schemas/SeekerPreference'
  *       404:
  *         description: Seeker profile not found
  *
@@ -435,15 +532,6 @@
  *     responses:
  *       200:
  *         description: Seeker preferences updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 preferences:
- *                   $ref: '#/components/schemas/SeekerPreference'
  *       404:
  *         description: Seeker profile not found
  *
@@ -459,7 +547,7 @@
  *         application/json:
  *           schema:
  *             type: object
- *             description: Profile fields to update (varies by user role - seeker/broker/owner)
+ *             description: Profile fields to update (varies by user role)
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -476,24 +564,20 @@
  *         name: state
  *         schema:
  *           type: string
- *         description: Filter by state
  *       - in: query
  *         name: role
  *         schema:
  *           type: string
  *           enum: [broker, owner, seeker]
- *         description: Filter by user role
  *       - in: query
  *         name: isVerified
  *         schema:
  *           type: boolean
- *         description: Filter by verification status
  *       - in: query
  *         name: gender
  *         schema:
  *           type: string
  *           enum: [male, female, other]
- *         description: Filter by gender
  *     responses:
  *       200:
  *         description: Profiles retrieved successfully
@@ -530,8 +614,8 @@
  *                     - $ref: '#/components/schemas/SeekerProfile'
  *                     - $ref: '#/components/schemas/BrokerProfile'
  *                     - $ref: '#/components/schemas/OwnerProfile'
- *       404:
- *         description: Profile not found
+ *                 hasProfile:
+ *                   type: boolean
  *
  * /profile/public/{id}:
  *   get:
@@ -550,20 +634,9 @@
  *         schema:
  *           type: string
  *           enum: [broker, owner, seeker]
- *         description: Profile type (required to determine profile type)
  *     responses:
  *       200:
  *         description: Profile retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 profile:
- *                   type: object
- *                   description: Public profile data (sensitive info excluded)
  *       400:
  *         description: Valid type parameter is required
  *       404:
@@ -584,32 +657,14 @@
  *         name: state
  *         schema:
  *           type: string
- *         description: Filter by state
  *       - in: query
  *         name: isVerified
  *         schema:
  *           type: boolean
- *         description: Filter by verification status
  *       - in: query
  *         name: isActive
  *         schema:
  *           type: boolean
- *         description: Filter by active status
- *       - in: query
- *         name: minRating
- *         schema:
- *           type: number
- *         description: Minimum rating filter (for brokers)
- *       - in: query
- *         name: budgetMin
- *         schema:
- *           type: number
- *         description: Minimum budget filter (for seekers)
- *       - in: query
- *         name: budgetMax
- *         schema:
- *           type: number
- *         description: Maximum budget filter (for seekers)
  *     responses:
  *       200:
  *         description: Profiles retrieved successfully
@@ -642,7 +697,7 @@
  *
  * /profile/verification-documents:
  *   post:
- *     summary: Upload verification documents
+ *     summary: Upload verification documents (JSON)
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
@@ -702,10 +757,9 @@
  *               role:
  *                 type: string
  *                 enum: [broker, owner, seeker]
- *                 description: User role (required to determine profile type)
  *     responses:
  *       200:
- *         description: Profile verification status updated successfully
+ *         description: Profile verification status updated
  *       400:
  *         description: Invalid request data
  *       404:

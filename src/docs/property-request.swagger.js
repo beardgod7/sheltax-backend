@@ -5,76 +5,54 @@
  *     PropertyRequest:
  *       type: object
  *       required:
- *         - category
- *         - minimumBudget
+ *         - propertyCategory
+ *         - listingType
  *         - maximumBudget
+ *         - minimumBudget
  *         - state
+ *         - region
+ *         - timeline
  *       properties:
  *         id:
  *           type: string
  *           format: uuid
- *           description: Unique identifier for the property request
  *         seekerId:
  *           type: string
  *           format: uuid
- *           description: ID of the seeker who created the request
- *         category:
+ *         propertyCategory:
  *           type: string
- *           enum: [rent, buy, shortlet]
- *           description: Type of property request
- *         minimumBudget:
- *           type: number
- *           description: Minimum budget
+ *           description: Property category (e.g. apartment, house, land, commercial)
+ *         listingType:
+ *           type: string
+ *           description: Listing type (e.g. rent, buy, shortlet)
  *         maximumBudget:
  *           type: number
- *           description: Maximum budget
- *         currency:
- *           type: string
- *           default: NGN
- *           description: Currency code
+ *           description: Maximum budget in Naira
+ *         minimumBudget:
+ *           type: number
+ *           description: Minimum budget in Naira
  *         state:
  *           type: string
- *           description: Preferred state
- *         locality:
+ *           description: State
+ *         region:
  *           type: string
- *           description: Specific area/neighborhood
- *         numberOfBedrooms:
- *           type: integer
- *           minimum: 0
- *           maximum: 20
- *           description: Preferred number of bedrooms
- *         numberOfBathrooms:
- *           type: integer
- *           minimum: 0
- *           maximum: 20
- *           description: Preferred number of bathrooms
- *         propertyType:
+ *           description: Region/area within the state
+ *         timeline:
  *           type: string
- *           description: Preferred property type
+ *           description: Timeline (e.g. immediate, 1 week, 1 month, 3 months)
+ *         duration:
+ *           type: string
+ *           description: Duration (e.g. flexible, 6 months, 1 year)
  *         otherInformation:
  *           type: string
- *           description: Additional details or special requirements
+ *           description: Additional details (optional)
  *         status:
  *           type: string
  *           enum: [active, fulfilled, cancelled, expired]
  *           default: active
- *           description: Request status
- *         urgency:
- *           type: string
- *           enum: [low, medium, high, urgent]
- *           default: medium
- *           description: Request urgency level
- *         desiredMoveInDate:
- *           type: string
- *           format: date
- *           description: Desired move-in date (for rent/shortlet)
- *         stayDuration:
- *           type: integer
- *           description: Duration in days (for shortlet requests)
  *         responseCount:
  *           type: integer
  *           default: 0
- *           description: Number of responses received
  *         viewCount:
  *           type: integer
  *           default: 0
@@ -305,44 +283,36 @@
  *           schema:
  *             type: object
  *             required:
- *               - category
- *               - minimumBudget
+ *               - propertyCategory
+ *               - listingType
  *               - maximumBudget
+ *               - minimumBudget
  *               - state
+ *               - region
+ *               - timeline
  *             properties:
- *               category:
+ *               propertyCategory:
  *                 type: string
- *                 enum: [rent, buy, shortlet]
- *               minimumBudget:
- *                 type: number
+ *                 description: Property category (e.g. apartment, house, land, commercial)
+ *               listingType:
+ *                 type: string
+ *                 description: Listing type (e.g. rent, buy, shortlet)
  *               maximumBudget:
  *                 type: number
- *               currency:
- *                 type: string
- *                 default: NGN
+ *               minimumBudget:
+ *                 type: number
  *               state:
  *                 type: string
- *               locality:
+ *               region:
  *                 type: string
- *               numberOfBedrooms:
- *                 type: integer
- *               numberOfBathrooms:
- *                 type: integer
- *               propertyType:
+ *               timeline:
  *                 type: string
+ *                 description: e.g. immediate, 1 week, 1 month, 3 months
+ *               duration:
+ *                 type: string
+ *                 description: e.g. flexible, 6 months, 1 year
  *               otherInformation:
  *                 type: string
- *               urgency:
- *                 type: string
- *                 enum: [low, medium, high, urgent]
- *               desiredMoveInDate:
- *                 type: string
- *                 format: date
- *               stayDuration:
- *                 type: integer
- *               expiresAt:
- *                 type: string
- *                 format: date-time
  *     responses:
  *       201:
  *         description: Property request created successfully

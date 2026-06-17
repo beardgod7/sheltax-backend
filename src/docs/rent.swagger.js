@@ -127,6 +127,28 @@
  *           enum: [rent, buy, swap, shortlet]
  *           default: rent
  *           description: Property tag/category
+ *         buildingApproval:
+ *           type: string
+ *           description: Building approval status (e.g. Approved, Annually)
+ *         titleDocument:
+ *           type: string
+ *           description: Title document type (e.g. Governor's Consent, CofO)
+ *         registeredOwner:
+ *           type: string
+ *           description: Registered owner info (e.g. Available on Request)
+ *         tenancyPeriod:
+ *           type: string
+ *           description: Tenancy period (e.g. 3 years, 1 year)
+ *         yearBuilt:
+ *           type: string
+ *           description: Year the property was built
+ *         inspectable:
+ *           type: boolean
+ *           default: true
+ *           description: Whether the property is available for inspection
+ *         serviceCharge:
+ *           type: string
+ *           description: Service charge details (e.g. Yes, No, NGN 500,000/year)
  *         createdAt:
  *           type: string
  *           format: date-time

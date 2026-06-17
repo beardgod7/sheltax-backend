@@ -156,6 +156,42 @@ const RentalProperty = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    // Additional Details (from Figma property detail page)
+    buildingApproval: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "e.g. Annually, Approved",
+    },
+    titleDocument: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "e.g. Governor's Consent, CofO, Deed of Assignment",
+    },
+    registeredOwner: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "e.g. Available on Request",
+    },
+    tenancyPeriod: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "e.g. 3 years, 1 year",
+    },
+    yearBuilt: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "e.g. 2013, 2020",
+    },
+    inspectable: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: true,
+    },
+    serviceCharge: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "e.g. Yes, No, NGN 500,000/year",
+    },
     // Tag field to identify property type
     tag: {
       type: DataTypes.ENUM("rent", "buy", "swap", "shortlet"),

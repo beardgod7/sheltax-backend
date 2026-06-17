@@ -1,61 +1,46 @@
 const Joi = require("joi");
 
-// Create property request schema
+// Create property request schema - matches Figma exactly
 const createPropertyRequestSchema = Joi.object({
-  category: Joi.string()
-    .valid("rent", "buy", "shortlet")
-    .required()
-    .messages({
-      "any.only": "Category must be one of: rent, buy, shortlet",
-      "any.required": "Category is required",
-    }),
-  minimumBudget: Joi.number().positive().required().messages({
-    "number.positive": "Minimum budget must be a positive number",
-    "any.required": "Minimum budget is required",
+  propertyCategory: Joi.string().required().messages({
+    "any.required": "Property category is required",
+  }),
+  listingType: Joi.string().required().messages({
+    "any.required": "Listing type is required",
   }),
   maximumBudget: Joi.number().positive().required().messages({
     "number.positive": "Maximum budget must be a positive number",
     "any.required": "Maximum budget is required",
   }),
-  currency: Joi.string().length(3).optional().default("NGN"),
-  state: Joi.string().min(2).max(100).required().messages({
-    "string.min": "State must be at least 2 characters long",
-    "string.max": "State cannot exceed 100 characters",
+  minimumBudget: Joi.number().positive().required().messages({
+    "number.positive": "Minimum budget must be a positive number",
+    "any.required": "Minimum budget is required",
+  }),
+  state: Joi.string().required().messages({
     "any.required": "State is required",
   }),
-  locality: Joi.string().min(2).max(100).optional(),
-  numberOfBedrooms: Joi.number().integer().min(0).max(20).optional(),
-  numberOfBathrooms: Joi.number().integer().min(0).max(20).optional(),
-  propertyType: Joi.string().max(100).optional(),
-  otherInformation: Joi.string().max(1000).optional(),
-  urgency: Joi.string()
-    .valid("low", "medium", "high", "urgent")
-    .optional()
-    .default("medium"),
-  desiredMoveInDate: Joi.date().optional(),
-  stayDuration: Joi.number().integer().min(1).max(365).optional(),
-  expiresAt: Joi.date().optional(),
+  region: Joi.string().required().messages({
+    "any.required": "Region is required",
+  }),
+  timeline: Joi.string().required().messages({
+    "any.required": "Timeline is required",
+  }),
+  duration: Joi.string().optional().allow("", null),
+  otherInformation: Joi.string().max(2000).optional().allow("", null),
 });
 
 // Update property request schema
 const updatePropertyRequestSchema = Joi.object({
-  category: Joi.string().valid("rent", "buy", "shortlet").optional(),
-  minimumBudget: Joi.number().positive().optional(),
+  propertyCategory: Joi.string().optional(),
+  listingType: Joi.string().optional(),
   maximumBudget: Joi.number().positive().optional(),
-  currency: Joi.string().length(3).optional(),
-  state: Joi.string().min(2).max(100).optional(),
-  locality: Joi.string().min(2).max(100).optional(),
-  numberOfBedrooms: Joi.number().integer().min(0).max(20).optional(),
-  numberOfBathrooms: Joi.number().integer().min(0).max(20).optional(),
-  propertyType: Joi.string().max(100).optional(),
-  otherInformation: Joi.string().max(1000).optional(),
-  status: Joi.string()
-    .valid("active", "fulfilled", "cancelled", "expired")
-    .optional(),
-  urgency: Joi.string().valid("low", "medium", "high", "urgent").optional(),
-  desiredMoveInDate: Joi.date().optional(),
-  stayDuration: Joi.number().integer().min(1).max(365).optional(),
-  expiresAt: Joi.date().optional(),
+  minimumBudget: Joi.number().positive().optional(),
+  state: Joi.string().optional(),
+  region: Joi.string().optional(),
+  timeline: Joi.string().optional(),
+  duration: Joi.string().optional().allow("", null),
+  otherInformation: Joi.string().max(2000).optional().allow("", null),
+  status: Joi.string().valid("active", "fulfilled", "cancelled", "expired").optional(),
 });
 
 // Create response to property request schema
@@ -104,42 +89,19 @@ const updateResponseStatusSchema = Joi.object({
 
 // Search property requests schema
 const searchPropertyRequestsSchema = Joi.object({
-  // Search query
   query: Joi.string().min(2).max(100).optional(),
-  
-  // Filters
-  category: Joi.string().valid("rent", "buy", "shortlet").optional(),
+  propertyCategory: Joi.string().optional(),
+  listingType: Joi.string().optional(),
   state: Joi.string().max(100).optional(),
-  locality: Joi.string().max(100).optional(),
-  status: Joi.string()
-    .valid("active", "fulfilled", "cancelled", "expired")
-    .optional(),
-  urgency: Joi.string().valid("low", "medium", "high", "urgent").optional(),
-  
-  // Budget filters
+  region: Joi.string().max(100).optional(),
+  status: Joi.string().valid("active", "fulfilled", "cancelled", "expired").optional(),
   minBudget: Joi.number().positive().optional(),
   maxBudget: Joi.number().positive().optional(),
-  
-  // Property specifications
-  minBedrooms: Joi.number().integer().min(0).max(20).optional(),
-  maxBedrooms: Joi.number().integer().min(0).max(20).optional(),
-  minBathrooms: Joi.number().integer().min(0).max(20).optional(),
-  maxBathrooms: Joi.number().integer().min(0).max(20).optional(),
-  propertyType: Joi.string().max(100).optional(),
-  
-  // Date filters
-  createdAfter: Joi.date().optional(),
-  createdBefore: Joi.date().optional(),
-  expiringBefore: Joi.date().optional(),
-  
-  // Sorting
   sortBy: Joi.string()
-    .valid("createdAt", "updatedAt", "minimumBudget", "maximumBudget", "urgency", "responseCount")
+    .valid("createdAt", "updatedAt", "minimumBudget", "maximumBudget")
     .optional()
     .default("createdAt"),
   sortOrder: Joi.string().valid("asc", "desc").optional().default("desc"),
-  
-  // Pagination
   page: Joi.number().integer().min(1).optional().default(1),
   limit: Joi.number().integer().min(1).max(100).optional().default(20),
 });

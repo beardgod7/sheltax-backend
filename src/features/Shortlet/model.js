@@ -197,6 +197,36 @@ const ShortletProperty = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    // Additional Details (from Figma property detail page)
+    buildingApproval: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    titleDocument: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    registeredOwner: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    tenancyPeriod: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    yearBuilt: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    inspectable: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: true,
+    },
+    serviceCharge: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     // Tag field to identify property type
     tag: {
       type: DataTypes.ENUM("rent", "buy", "swap", "shortlet"),

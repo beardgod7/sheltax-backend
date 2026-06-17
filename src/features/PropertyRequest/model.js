@@ -19,82 +19,62 @@ const PropertyRequest = sequelize.define(
         key: "id",
       },
     },
-    // Request category
-    category: {
-      type: DataTypes.ENUM("rent", "buy", "shortlet"),
+    // From Figma: Property Category dropdown
+    propertyCategory: {
+      type: DataTypes.STRING,
       allowNull: false,
-      comment: "Type of property request"
+      comment: "Property category (e.g. apartment, house, land, commercial)",
     },
-    // Budget information
-    minimumBudget: {
-      type: DataTypes.DECIMAL(15, 2),
+    // From Figma: Listing Type dropdown
+    listingType: {
+      type: DataTypes.STRING,
       allowNull: false,
+      comment: "Listing type (e.g. rent, buy, shortlet)",
     },
+    // From Figma: Maximum Budget (₦)
     maximumBudget: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
     },
-    currency: {
-      type: DataTypes.STRING,
+    // From Figma: Minimum Budget
+    minimumBudget: {
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
-      defaultValue: "NGN",
     },
-    // Location preferences
+    // From Figma: State dropdown
     state: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    locality: {
+    // From Figma: Region dropdown
+    region: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    // From Figma: Timeline (Due date dropdown)
+    timeline: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      comment: "Timeline/due date (e.g. immediate, 1 week, 1 month, 3 months)",
+    },
+    // From Figma: Duration
+    duration: {
       type: DataTypes.STRING,
       allowNull: true,
-      comment: "Specific area/neighborhood"
+      comment: "Duration (e.g. flexible, 6 months, 1 year)",
     },
-    // Property specifications
-    numberOfBedrooms: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      validate: { min: 0, max: 20 },
-    },
-    numberOfBathrooms: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      validate: { min: 0, max: 20 },
-    },
-    propertyType: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      comment: "Preferred property type (apartment, house, etc.)"
-    },
-    // Additional information
+    // From Figma: Other Information (Optional)
     otherInformation: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Additional details or special requirements"
     },
-    // Request status
+    // Request status (internal)
     status: {
       type: DataTypes.ENUM("active", "fulfilled", "cancelled", "expired"),
       allowNull: false,
       defaultValue: "active",
     },
-    // Urgency
-    urgency: {
-      type: DataTypes.ENUM("low", "medium", "high", "urgent"),
-      allowNull: false,
-      defaultValue: "medium",
-    },
-    // Move-in date (for rent/shortlet)
-    desiredMoveInDate: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    // Duration (for shortlet)
-    stayDuration: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      comment: "Duration in days for shortlet requests"
-    },
-    // Response tracking
+    // Response tracking (internal)
     responseCount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
@@ -103,26 +83,17 @@ const PropertyRequest = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    // Expiry
-    expiresAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      comment: "Request expiration date"
-    },
   },
   {
     tableName: "PropertyRequests",
     timestamps: true,
     indexes: [
       { fields: ["seekerId"] },
-      { fields: ["category"] },
+      { fields: ["propertyCategory"] },
+      { fields: ["listingType"] },
       { fields: ["state"] },
       { fields: ["status"] },
-      { fields: ["urgency"] },
-      { fields: ["minimumBudget"] },
-      { fields: ["maximumBudget"] },
       { fields: ["createdAt"] },
-      { fields: ["expiresAt"] },
     ],
   }
 );

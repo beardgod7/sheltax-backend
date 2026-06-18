@@ -88,38 +88,28 @@ async function signup(req, res, next) {
 
     const newUser = await createUser(newUserData);
 
-    // Only send OTP at signup for seekers.
-    // Owner/Broker get OTP after verify-identity step.
-    if (validatedData.role === "seeker") {
-      const verificationCode = Math.floor(
-        100000 + Math.random() * 900000
-      ).toString();
+    // Send OTP immediately for ALL roles after signup
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
-      await Token.create({
-        userId: newUser.id,
-        token: verificationCode,
-        token_type: "verify_account",
-        expiresIn: Date.now() + 300000,
-      });
+    await Token.create({
+      userId: newUser.id,
+      token: verificationCode,
+      token_type: "verify_account",
+      expiresIn: Date.now() + 300000,
+    });
 
-      try {
-        await sendVerificationCodeEmail(newUser.email, verificationCode);
-      } catch (emailErr) {
-        console.error("Email sending failed: ", emailErr);
-      }
-
-      return res.status(201).json({
-        message: "Account created successfully! Please check your email to verify your account.",
-        userId: newUser.id,
-        nextStep: "verify-otp",
-      });
+    try {
+      await sendVerificationCodeEmail(newUser.email, verificationCode);
+    } catch (emailErr) {
+      console.error("Email sending failed: ", emailErr);
     }
 
-    // Owner/Broker — no OTP yet, they need to complete profile + verify identity first
     return res.status(201).json({
-      message: "Account created successfully! Please complete your profile.",
+      message: "Account created successfully! Please check your email to verify your account.",
       userId: newUser.id,
-      nextStep: "complete-profile",
+      nextStep: "verify-otp",
     });
   } catch (err) {
     console.error("Signup Error: ", err);

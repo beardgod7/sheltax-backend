@@ -64,11 +64,18 @@
  *
  * /auth/signup:
  *   post:
- *     summary: Register a new user (Step 1 - no password)
+ *     summary: Register a new user (all roles)
  *     description: |
- *       Creates a new user account. Password is NOT set at this stage.
- *       After signup, user receives an OTP via email for verification.
- *       Flow: signup -> verify OTP -> set password
+ *       Creates account and sends OTP immediately for ALL roles.
+ *       Flow for ALL roles: signup → verify OTP (/auth/verify/:code) → set password (/auth/set-password)
+ *
+ *       After login, owner/broker complete their profile via:
+ *       - POST /profile/owner (owner profile setup)
+ *       - POST /profile/broker (broker profile setup)
+ *
+ *       Seeker fields: firstName, surname, phoneNumber, email, ninVerification
+ *       Owner fields: firstName, surname, phoneNumber, email
+ *       Broker fields: firstName, surname, phoneNumber, email, brokerProfileType, yearsOfExperience, bio, specialization
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -140,93 +147,28 @@
  *
  * /auth/complete-profile:
  *   post:
- *     summary: "Step 2: Complete profile (Owner/Broker only)"
+ *     summary: "Complete profile setup (Owner/Broker only - after login)"
  *     description: |
- *       Owner fields: location, propertyTypes, listingIntent, ownerType
- *       Broker fields: agencyCompanyName, companyYearsOfExistence, operatingLocations, companySize, portfolioSummary
+ *       Called AFTER the user has verified OTP and set password.
+ *       Use the profile endpoints instead:
+ *       - Owner: POST /profile/owner
+ *       - Broker: POST /profile/broker
  *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               location:
- *                 type: string
- *                 description: Owner only - state/area
- *               propertyTypes:
- *                 type: string
- *                 description: Owner only - apartment, house, etc.
- *               listingIntent:
- *                 type: string
- *                 description: Owner only - rent/sale/both
- *               ownerType:
- *                 type: string
- *                 description: Owner only - who do you identify as
- *               agencyCompanyName:
- *                 type: string
- *                 description: Broker only
- *               companyYearsOfExistence:
- *                 type: string
- *                 description: Broker only
- *               operatingLocations:
- *                 type: string
- *                 description: Broker only (required)
- *               companySize:
- *                 type: string
- *                 description: Broker only
- *               portfolioSummary:
- *                 type: string
- *                 description: Broker only
  *     responses:
- *       200:
- *         description: Profile saved. Proceed to verify-identity.
- *       400:
- *         description: Validation error or wrong role
- *       404:
- *         description: User not found
+ *       301:
+ *         description: Use /profile/owner or /profile/broker instead
  *
  * /auth/verify-identity:
  *   post:
- *     summary: "Step 3: Upload identity documents (Owner/Broker only)"
- *     description: Upload profile picture, government ID, and NIN/CAC document. Sends OTP after upload.
+ *     summary: "Upload identity documents (Owner/Broker only - after login)"
+ *     description: |
+ *       Called AFTER the user has verified OTP and set password.
+ *       Use the profile verification endpoint instead:
+ *       POST /profile/verification-documents
  *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *               profilePicture:
- *                 type: string
- *                 format: binary
- *                 description: Profile picture or company logo
- *               governmentId:
- *                 type: string
- *                 format: binary
- *                 description: Valid government ID (passport, driver's license, national ID)
- *               ninCacDocument:
- *                 type: string
- *                 format: binary
- *                 description: NIN or CAC document (if company)
  *     responses:
- *       200:
- *         description: Documents uploaded. OTP sent to email.
- *       400:
- *         description: Wrong role
- *       404:
- *         description: User not found
+ *       301:
+ *         description: Use /profile/verification-documents instead
  *
  * /auth/set-password:
  *   post:

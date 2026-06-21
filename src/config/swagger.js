@@ -124,11 +124,35 @@ const options = {
     tags: [
       {
         name: "Authentication",
-        description: "User authentication and authorization endpoints",
+        description: "Shared login, logout, forgot/reset password endpoints",
+      },
+      {
+        name: "Seeker Auth",
+        description: "🔵 SEEKER — Registration flow: signup → verify OTP → set password",
+      },
+      {
+        name: "Seeker Profile",
+        description: "🔵 SEEKER — Profile management after login",
+      },
+      {
+        name: "Owner Auth",
+        description: "🟡 OWNER — Registration flow: signup → complete-profile → verify-identity → verify OTP → set password",
+      },
+      {
+        name: "Owner Profile",
+        description: "🟡 OWNER — Profile management after login",
+      },
+      {
+        name: "Broker Auth",
+        description: "🟢 BROKER — Registration flow: signup (personal+professional) → complete-profile (org info) → verify-identity → verify OTP → set password",
+      },
+      {
+        name: "Broker Profile",
+        description: "🟢 BROKER — Profile management after login",
       },
       {
         name: "Profile",
-        description: "User profile management endpoints",
+        description: "General profile endpoints (all roles)",
       },
       {
         name: "Rental Properties",
@@ -177,6 +201,9 @@ const options = {
     ],
   },
   apis: [
+    "./src/docs/seeker.swagger.js",
+    "./src/docs/owner.swagger.js",
+    "./src/docs/broker.swagger.js",
     "./src/docs/auth.swagger.js",
     "./src/docs/profile.swagger.js",
     "./src/docs/rent.swagger.js",

@@ -124,86 +124,31 @@ const options = {
     tags: [
       {
         name: "Authentication",
-        description: "Shared login, logout, forgot/reset password endpoints",
-      },
-      {
-        name: "Seeker Auth",
-        description: "🔵 SEEKER — Registration flow: signup → verify OTP → set password",
-      },
-      {
-        name: "Seeker Profile",
-        description: "🔵 SEEKER — Profile management after login",
-      },
-      {
-        name: "Owner Auth",
-        description: "🟡 OWNER — Registration flow: signup → complete-profile → verify-identity → verify OTP → set password",
-      },
-      {
-        name: "Owner Profile",
-        description: "🟡 OWNER — Profile management after login",
-      },
-      {
-        name: "Broker Auth",
-        description: "🟢 BROKER — Registration flow: signup (personal+professional) → complete-profile (org info) → verify-identity → verify OTP → set password",
-      },
-      {
-        name: "Broker Profile",
-        description: "🟢 BROKER — Profile management after login",
+        description: "Registration, login, OTP, password management. See each endpoint for per-role examples.",
       },
       {
         name: "Profile",
-        description: "General profile endpoints (all roles)",
+        description: "Profile management (all roles)",
       },
       {
         name: "Rental Properties",
-        description: "Rental property management endpoints",
-      },
-      {
-        name: "Rental Inquiries",
-        description: "Rental property inquiry endpoints",
-      },
-      {
-        name: "Rental Favorites",
-        description: "Rental property favorites endpoints",
+        description: "Rental property management",
       },
       {
         name: "Sale Properties",
-        description: "Sale property management endpoints",
-      },
-      {
-        name: "Sale Inquiries",
-        description: "Sale property inquiry endpoints",
-      },
-      {
-        name: "Sale Favorites",
-        description: "Sale property favorites endpoints",
+        description: "Sale property management",
       },
       {
         name: "Shortlet Properties",
-        description: "Shortlet property management endpoints",
-      },
-      {
-        name: "Shortlet Inquiries",
-        description: "Shortlet property inquiry endpoints",
-      },
-      {
-        name: "Shortlet Favorites",
-        description: "Shortlet property favorites endpoints",
+        description: "Shortlet property management",
       },
       {
         name: "Property Requests",
-        description: "Property request management endpoints",
-      },
-      {
-        name: "Property Request Responses",
-        description: "Property request response endpoints",
+        description: "Property request management (seekers post, brokers/owners respond)",
       },
     ],
   },
   apis: [
-    "./src/docs/seeker.swagger.js",
-    "./src/docs/owner.swagger.js",
-    "./src/docs/broker.swagger.js",
     "./src/docs/auth.swagger.js",
     "./src/docs/profile.swagger.js",
     "./src/docs/rent.swagger.js",

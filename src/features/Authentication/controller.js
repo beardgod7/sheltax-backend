@@ -39,6 +39,7 @@ const {
   sendResetCodeEmail,
 } = require("../../service/emailservice");
 const { User, Token } = require("./model");
+const { getPagination, paginatedData } = require("../../utils/pagination");
 
 // Function to get user by ID
 const getUsersById = async (req, res) => {
@@ -71,10 +72,10 @@ async function signup(req, res, next) {
       return res.status(409).json({ message: "Account already exists!" });
     }
 
-    // Build user data - no password at this stage
+    // Build user data
     const newUserData = {
       email: validatedData.email.toLowerCase(),
-      role: validatedData.role,
+      role: validatedData.role || "seeker",
       firstName: validatedData.firstName,
       surname: validatedData.surname,
       phoneNumber: validatedData.phoneNumber,
@@ -142,6 +143,16 @@ async function setPassword(req, res, next) {
       return res.status(403).json({
         message: "Account not verified. Please verify your email first.",
       });
+    }
+
+    let setupClaims;
+    try {
+      setupClaims = jwt.verify(validatedData.setupToken, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: "Password setup session is invalid or expired." });
+    }
+    if (setupClaims.scope !== "password_setup" || setupClaims.id !== user.id) {
+      return res.status(401).json({ message: "Password setup session is invalid." });
     }
 
     if (user.password) {
@@ -336,9 +347,12 @@ async function AdminSignup(req, res, next) {
 // Email verification
 async function verifyEmail(req, res, next) {
   try {
-    let { code } = req.params;
+    let code = req.params.code || req.body?.code || req.body?.otp;
+    const email = req.body?.email || req.query?.email;
 
-    code = code.replace(/^:/, "").trim();
+    if (typeof code === "string") {
+      code = code.replace(/^:/, "").trim();
+    }
 
     if (!code) {
       return res
@@ -346,21 +360,19 @@ async function verifyEmail(req, res, next) {
         .json({ message: "Verification code is required." });
     }
 
-    // Allow master fallback OTP - verifies ALL unverified accounts
-    const MASTER_OTP = "123456";
-
-    let tokenRecord = await Token.findOne({
-      where: { token: code, token_type: "verify_account" },
-    });
-
-    if (!tokenRecord && code === MASTER_OTP) {
-      const { Op } = require("sequelize");
-      const [count] = await User.update(
-        { verified: true },
-        { where: { verified: false } }
-      );
-      console.log(`Master OTP used: ${count} unverified accounts verified.`);
-      return res.status(200).json({ message: `Account verified successfully!` });
+    let tokenRecord;
+    if (email) {
+      const userByEmail = await findUserByEmail(email);
+      if (userByEmail) {
+        tokenRecord = await Token.findOne({
+          where: { userId: userByEmail.id, token: code, token_type: "verify_account" },
+        });
+      }
+    }
+    if (!tokenRecord) {
+      tokenRecord = await Token.findOne({
+        where: { token: code, token_type: "verify_account" },
+      });
     }
 
     if (!tokenRecord) {
@@ -391,8 +403,16 @@ async function verifyEmail(req, res, next) {
     await Token.destroy({ where: { token: code } });
 
     return res.status(200).json({
-      message: "Account verified successfully!",
+      message: "Account verified. Set your password to complete registration.",
+      setupToken: jwt.sign(
+        { id: user.id, scope: "password_setup" },
+        process.env.JWT_SECRET,
+        { expiresIn: "10m" }
+      ),
       email: user.email,
+      role: user.role,
+      verification: true,
+      id: user.id,
     });
   } catch (error) {
     console.error("Verification Error:", error.message);
@@ -456,8 +476,8 @@ async function resendVerificationCode(req, res) {
 async function login(req, res, next) {
   try {
     const validatedData = await signinSchema.validateAsync(req.body);
-
-    let { identifier, password } = validatedData;
+    let identifier = validatedData.identifier || validatedData.email;
+    const { password } = validatedData;
 
     // Convert email to lowercase if identifier is an email
     const isEmail = identifier.includes("@");
@@ -575,7 +595,11 @@ async function refreshToken(req, res, next) {
 
     const decoded = jwt.verify(refresh_token, process.env.JWT_SECRET);
 
-    const newAccessToken = generateAccessToken(decoded.sub, decoded.role);
+    const refreshUser = await User.findByPk(decoded.sub);
+    if (!refreshUser) {
+      return res.status(403).json({ message: "Invalid refresh token user." });
+    }
+    const newAccessToken = generateAccessToken(refreshUser.id, refreshUser.role);
     const newRefreshToken = generateRefreshToken(decoded.sub);
 
     const decodedNewRefreshToken = jwt.verify(
@@ -753,10 +777,15 @@ async function approveUser(req, res, next) {
 
 async function getUsers(req, res) {
   try {
-    const users = await getAllUsersWithProfiles();
+    const pagination = getPagination(req.query);
+    const { count, rows: users } = await getAllUsersWithProfiles(pagination);
     return res
       .status(200)
-      .json({ message: "Users fetched successfully", data: users });
+      .json({
+        success: true,
+        message: "Users fetched successfully",
+        data: paginatedData("users", users, count, pagination),
+      });
   } catch (error) {
     return res.status(500).json({ message: "Internal Server Error" });
   }

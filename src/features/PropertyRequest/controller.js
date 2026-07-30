@@ -6,6 +6,14 @@ const {
   updateResponseStatusSchema,
   searchPropertyRequestsSchema,
 } = require("./schema");
+const { paginatedData } = require("../../utils/pagination");
+
+function paginationFrom(result) {
+  return {
+    page: result.pagination.currentPage,
+    limit: result.pagination.itemsPerPage,
+  };
+}
 
 class PropertyRequestController {
   // Create property request (Seeker only)
@@ -86,8 +94,13 @@ class PropertyRequestController {
 
       res.json({
         success: true,
-        data: result.requests,
-        pagination: result.pagination,
+        message: "Property requests retrieved successfully",
+        data: paginatedData(
+          "requests",
+          result.requests,
+          result.pagination.totalItems,
+          paginationFrom(result),
+        ),
       });
     } catch (error) {
       console.error("Search property requests error:", error);
@@ -111,8 +124,13 @@ class PropertyRequestController {
 
       res.json({
         success: true,
-        data: result.requests,
-        pagination: result.pagination,
+        message: "Property requests retrieved successfully",
+        data: paginatedData(
+          "requests",
+          result.requests,
+          result.pagination.totalItems,
+          paginationFrom(result),
+        ),
       });
     } catch (error) {
       console.error("Get my requests error:", error);
@@ -272,8 +290,13 @@ class PropertyRequestController {
 
       res.json({
         success: true,
-        data: result.responses,
-        pagination: result.pagination,
+        message: "Property request responses retrieved successfully",
+        data: paginatedData(
+          "responses",
+          result.responses,
+          result.pagination.totalItems,
+          paginationFrom(result),
+        ),
       });
     } catch (error) {
       console.error("Get request responses error:", error);
@@ -297,8 +320,13 @@ class PropertyRequestController {
 
       res.json({
         success: true,
-        data: result.responses,
-        pagination: result.pagination,
+        message: "Property request responses retrieved successfully",
+        data: paginatedData(
+          "responses",
+          result.responses,
+          result.pagination.totalItems,
+          paginationFrom(result),
+        ),
       });
     } catch (error) {
       console.error("Get my responses error:", error);

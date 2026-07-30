@@ -32,7 +32,9 @@ const {
 } = require("./repository");
 
 const { findUserById } = require("../Authentication/repository");
+const { User } = require("../Authentication/model");
 const cloudinary = require("../../config/cloudinary");
+const { getPagination, paginatedData } = require("../../utils/pagination");
 
 const {
   createProfileSchema,
@@ -428,36 +430,42 @@ async function updateSeekerPreferences(req, res) {
  */
 async function getMyProfile(req, res) {
   try {
-    const userId = req.user.sub;
-    const userRole = req.user.role;
+    const userId = req.user?.id || req.user?.sub || req.user?.userId;
+    const user = await User.findByPk(userId, { attributes: { exclude: ["password"] } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     let profile = null;
 
-    switch (userRole) {
+    switch (user.role) {
       case "seeker":
-        profile = await findProfileByUserId(userId);
+        profile = await findProfileByUserId(user.id);
         break;
       case "broker":
-        profile = await findBrokerProfileByUserId(userId);
+        profile = await findBrokerProfileByUserId(user.id);
         break;
       case "owner":
-        profile = await findOwnerProfileByUserId(userId);
+        profile = await findOwnerProfileByUserId(user.id);
         break;
       case "admin":
       case "super_admin":
         return res.status(200).json({
           message: "Profile retrieved successfully",
           profile: null,
-          user: req.user,
+          hasProfile: false,
+          user: user,
         });
       default:
-        return res.status(400).json({ message: "Invalid user role" });
+        break;
     }
 
     return res.status(200).json({
       message: "Profile retrieved successfully",
       profile: profile || null,
       hasProfile: !!profile,
+      user: user,
     });
   } catch (error) {
     console.error("Error getting profile:", error);
@@ -686,12 +694,13 @@ async function getAllUserProfiles(req, res) {
     if (isVerified !== undefined) filters.isVerified = isVerified === "true";
     if (gender) filters.gender = gender;
 
-    const profiles = await getAllProfiles(filters);
+    const pagination = getPagination(req.query);
+    const { count, rows: profiles } = await getAllProfiles(filters, pagination);
 
     return res.status(200).json({
+      success: true,
       message: "Profiles retrieved successfully",
-      count: profiles.length,
-      profiles,
+      data: paginatedData("profiles", profiles, count, pagination),
     });
   } catch (error) {
     console.error("Error getting all profiles:", error);
@@ -731,23 +740,24 @@ async function getProfilesByUserRole(req, res) {
     if (budgetMin) filters.budgetMin = parseFloat(budgetMin);
     if (budgetMax) filters.budgetMax = parseFloat(budgetMax);
 
-    let profiles;
+    const pagination = getPagination(req.query);
+    let result;
     switch (role) {
       case "seeker":
-        profiles = await getAllProfiles(filters);
+        result = await getAllProfiles(filters, pagination);
         break;
       case "broker":
-        profiles = await getAllBrokerProfiles(filters);
+        result = await getAllBrokerProfiles(filters, pagination);
         break;
       case "owner":
-        profiles = await getAllOwnerProfiles(filters);
+        result = await getAllOwnerProfiles(filters, pagination);
         break;
     }
 
     return res.status(200).json({
+      success: true,
       message: `${role} profiles retrieved successfully`,
-      count: profiles.length,
-      profiles,
+      data: paginatedData("profiles", result.rows, result.count, pagination),
     });
   } catch (error) {
     console.error("Error getting profiles by role:", error);
@@ -900,6 +910,142 @@ async function uploadVerificationDocuments(req, res) {
   }
 }
 
+/**
+ * Submit KYC verification (JSON payload from frontend)
+ * Accepts: profilePictureUrl, governmentIdUrl, governmentIdType, ninNumber, ninDocumentUrl, cacDocumentUrl, businessRegistrationNumber
+ */
+async function submitKyc(req, res) {
+  try {
+    const userId = req.user?.id || req.user?.sub || req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized." });
+    }
+
+    let {
+      profilePictureUrl,
+      governmentIdUrl,
+      governmentIdType,
+      ninNumber,
+      ninDocumentUrl,
+      cacDocumentUrl,
+      businessRegistrationNumber,
+    } = req.body || {};
+    const missing = [];
+    if (!profilePictureUrl) missing.push("profilePictureUrl");
+    if (!governmentIdUrl) missing.push("governmentIdUrl");
+    if (!ninNumber || !/^\d{11}$/.test(String(ninNumber).trim())) missing.push("valid 11-digit ninNumber");
+    if (!ninDocumentUrl) missing.push("ninDocumentUrl");
+    if (missing.length) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing or invalid Strong KYC fields: ${missing.join(", ")}`,
+      });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    if (!["owner", "broker"].includes(user.role)) {
+      return res.status(403).json({ success: false, message: "Strong KYC is only available to Owners and Brokers." });
+    }
+    if (user.kycStatus === "APPROVED") {
+      return res.status(409).json({ success: false, message: "Strong KYC is already approved." });
+    }
+
+    // Cloudinary helper for base64 strings
+    const uploadIfBase64 = async (fileData, folder = "shelta-x/kyc") => {
+      if (!fileData) return fileData;
+      if (
+        fileData.startsWith("data:image/") ||
+        fileData.startsWith("data:application/")
+      ) {
+        try {
+          const result = await cloudinary.uploader.upload(fileData, {
+            folder,
+            resource_type: "auto",
+          });
+          return result.secure_url;
+        } catch (err) {
+          console.error("Cloudinary upload failed in submitKyc:", err.message);
+        }
+      }
+      return fileData;
+    };
+
+    profilePictureUrl = await uploadIfBase64(profilePictureUrl, "shelta-x/kyc/avatars");
+    governmentIdUrl = await uploadIfBase64(governmentIdUrl, "shelta-x/kyc/government-ids");
+    ninDocumentUrl = await uploadIfBase64(ninDocumentUrl, "shelta-x/kyc/nin");
+    cacDocumentUrl = await uploadIfBase64(cacDocumentUrl, "shelta-x/kyc/cac");
+
+    // Update user verification fields if present
+    if (profilePictureUrl) user.profilePicture = profilePictureUrl;
+    if (governmentIdUrl) user.governmentId = governmentIdUrl;
+    if (ninNumber) user.ninVerification = ninNumber;
+    if (businessRegistrationNumber) user.businessRegistrationNumber = businessRegistrationNumber;
+    if (ninDocumentUrl || cacDocumentUrl) {
+      user.ninCacDocument = ninDocumentUrl || cacDocumentUrl;
+    }
+    user.kycStatus = "PENDING";
+    user.kycRejectionReason = null;
+    await user.save();
+
+    const { ReviewDecision } = require("../Listing/model");
+    const lastCycle = await ReviewDecision.max("cycle", {
+      where: { subjectType: "KYC", subjectId: user.id },
+    });
+    await ReviewDecision.create({
+      subjectType: "KYC",
+      subjectId: user.id,
+      cycle: Number(lastCycle || 0) + 1,
+      outcome: "SUBMITTED",
+      submittedBy: user.id,
+    });
+
+    // Also update Owner/Broker profile table if exists
+    if (user.role === "owner") {
+      const ownerProfile = await findOwnerProfileByUserId(userId);
+      if (ownerProfile) {
+        if (profilePictureUrl) ownerProfile.profilePicture = profilePictureUrl;
+        if (governmentIdUrl) ownerProfile.governmentId = governmentIdUrl;
+        if (governmentIdType) ownerProfile.governmentIdType = governmentIdType;
+        if (ninNumber) ownerProfile.ninCacNumber = ninNumber;
+        if (businessRegistrationNumber) ownerProfile.businessRegistrationNumber = businessRegistrationNumber;
+        await ownerProfile.save();
+      }
+    } else if (user.role === "broker") {
+      const brokerProfile = await findBrokerProfileByUserId(userId);
+      if (brokerProfile) {
+        if (profilePictureUrl) brokerProfile.profilePicture = profilePictureUrl;
+        if (governmentIdUrl) brokerProfile.governmentId = governmentIdUrl;
+        if (governmentIdType) brokerProfile.governmentIdType = governmentIdType;
+        if (ninNumber) brokerProfile.ninCacNumber = ninNumber;
+        if (businessRegistrationNumber) brokerProfile.businessRegistrationNumber = businessRegistrationNumber;
+        await brokerProfile.save();
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "KYC documents submitted successfully and sent for admin review.",
+      kycStatus: "PENDING",
+      urls: {
+        profilePictureUrl,
+        governmentIdUrl,
+        ninDocumentUrl,
+        cacDocumentUrl,
+      },
+    });
+  } catch (error) {
+    console.error("Error submitting KYC:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}
+
 module.exports = {
   createSeekerProfile,
   createBrokerProfileHandler,
@@ -917,4 +1063,5 @@ module.exports = {
   deleteUserProfile,
   updateProfileVerification,
   uploadVerificationDocuments,
+  submitKyc,
 };

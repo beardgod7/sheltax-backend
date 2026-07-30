@@ -1,20 +1,30 @@
 const { Sequelize } = require("sequelize");
-require("dotenv").config();
+const neon = require("@neondatabase/serverless");
+const ws = require("ws");
+require("dotenv").config({ override: true });
 
 const databaseUrl = process.env.DATABASE_URL;
+const useNeonWebSocket = databaseUrl?.includes(".neon.tech");
+
+if (useNeonWebSocket) {
+  neon.neonConfig.webSocketConstructor = ws;
+}
 
 const sequelize = new Sequelize(databaseUrl, {
   dialect: "postgres",
+  ...(useNeonWebSocket ? { dialectModule: neon } : {}),
   dialectOptions: {
     ssl: {
       require: true,
       rejectUnauthorized: false,
     },
+    connectionTimeoutMillis: 10000,
+    keepAlive: true,
   },
   pool: {
-    max: 50,
+    max: 10,
     min: 0,
-    acquire: 30000,
+    acquire: 15000,
     idle: 10000,
   },
   logging: false,
@@ -22,12 +32,12 @@ const sequelize = new Sequelize(databaseUrl, {
 
 sequelize
   .authenticate()
-  .then(() => {
+  .then(async () => {
     console.log("Database connected successfully!");
-    return sequelize.sync({ alter: { drop: false } });
-  })
-  .then(() => {
-    console.log("All models were synchronized successfully.");
+    if (process.env.DB_SYNC === "true") {
+      await sequelize.sync({ alter: { drop: false } });
+      console.warn("DB_SYNC is enabled; models were synchronized automatically.");
+    }
   })
   .catch((err) => {
     console.error("Error connecting to the database:", err);

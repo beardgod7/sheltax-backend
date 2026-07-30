@@ -20,6 +20,7 @@ const {
   deleteUserProfile,
   updateProfileVerification,
   uploadVerificationDocuments,
+  submitKyc,
 } = require("./controller");
 
 const router = express.Router();
@@ -81,6 +82,8 @@ router.post("/picture", upload.single("profilePicture"), uploadProfilePicture);
 
 // Verification documents
 router.post("/verification-documents", uploadVerificationDocuments);
+router.post("/kyc/submit", submitKyc);
+router.post("/kyc", submitKyc);
 
 // Admin routes
 router.get("/", authorize(["admin", "super_admin"]), getAllUserProfiles);

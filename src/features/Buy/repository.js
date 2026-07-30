@@ -9,6 +9,9 @@ class SaleRepository {
       const property = await SaleProperty.create({
         ...propertyData,
         ownerId,
+        listingStatus: "pending",
+        status: "under_review",
+        isVerified: false,
       });
       return property;
     } catch (error) {
@@ -24,7 +27,7 @@ class SaleRepository {
         includes.push({
           model: User,
           as: "owner",
-          attributes: ["id", "username", "email"],
+          attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
         });
       }
 
@@ -173,6 +176,8 @@ class SaleRepository {
       }
       if (listingStatus) {
         whereConditions.listingStatus = listingStatus;
+      } else if (!filters.allStatuses) {
+        whereConditions.listingStatus = "active";
       }
 
       // Tag filter
@@ -193,7 +198,7 @@ class SaleRepository {
           {
             model: User,
             as: "owner",
-            attributes: ["id", "username", "email"],
+            attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
           },
         ],
         order,
@@ -382,7 +387,7 @@ class SaleRepository {
           {
             model: User,
             as: "inquirer",
-            attributes: ["id", "username", "email"],
+            attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -518,7 +523,7 @@ class SaleRepository {
               {
                 model: User,
                 as: "owner",
-                attributes: ["id", "username", "email"],
+                attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
               },
             ],
           },

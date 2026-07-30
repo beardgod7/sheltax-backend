@@ -38,7 +38,7 @@ const Profile = sequelize.define(
       allowNull: false,
     },
     profilePicture: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     isComplete: {
@@ -99,15 +99,15 @@ const BrokerProfile = sequelize.define(
     },
     // Verification (Step 3)
     profilePicture: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     governmentId: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     ninCacDocument: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     isVerified: {
@@ -172,15 +172,15 @@ const OwnerProfile = sequelize.define(
     },
     // Verification (Step 3)
     profilePicture: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     governmentId: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     ninCacDocument: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     isVerified: {

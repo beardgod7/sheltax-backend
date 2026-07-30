@@ -84,8 +84,8 @@ app.options("*", cors());
 // Middleware setup
 app.use(helmet());
 app.use(morgan("combined"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -94,7 +94,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // Routes
+app.use("/api/v1", routes);
 app.use("/v1/api", routes);
+app.use("/api", routes);
 
 // Global error handler
 app.use(errorHandler);

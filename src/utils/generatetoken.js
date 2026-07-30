@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 // const config = require("./config");
 // const { oneHourExpiry, twoMonthsExpiry } = require("./date-time");
 const crypto = require("crypto");
+const oneHourFromNow = () => new Date(Date.now() + 60 * 60 * 1000);
 
 function generateAccessToken(userId, role) {
   if (!process.env.JWT_SECRET) {
@@ -18,7 +19,7 @@ function generateVerificationToken(userId) {
     userId: userId,
     token: crypto.randomBytes(16).toString("hex"),
     token_type: "verify_account",
-    expiresIn: oneHourExpiry.toISOString(),
+    expiresIn: oneHourFromNow().toISOString(),
   };
 }
 
@@ -34,7 +35,7 @@ function generatePasswordResetToken(userId) {
     userId: userId,
     token: crypto.randomBytes(16).toString("hex"),
     token_type: "reset_password",
-    expiresIn: oneHourExpiry,
+    expiresIn: oneHourFromNow(),
   };
 }
 
@@ -43,7 +44,7 @@ function generateSessionToken(userId) {
     userId: userId,
     token_type: "session_token",
     token: crypto.randomBytes(16).toString("hex"),
-    expiresIn: oneHourExpiry,
+    expiresIn: oneHourFromNow(),
   };
 }
 

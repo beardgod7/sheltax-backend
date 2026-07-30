@@ -1,19 +1,15 @@
 const Joi = require("joi");
 
-// Signup schema - new flow: no password at signup
+// Signup schema - supports 4-step registration & direct password submission
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
-  role: Joi.string().valid("seeker", "owner", "broker", "admin").required(),
+  role: Joi.string().valid("seeker", "owner", "broker").default("seeker").optional(),
   firstName: Joi.string().min(2).max(50).required(),
   surname: Joi.string().min(2).max(50).required(),
   phoneNumber: Joi.string().pattern(/^[+]?[\d\s\-\(\)]{10,15}$/).required(),
   ninVerification: Joi.string().optional().allow("", null),
   // Broker-specific fields
-  brokerProfileType: Joi.when("role", {
-    is: "broker",
-    then: Joi.string().required(),
-    otherwise: Joi.string().optional().allow("", null),
-  }),
+  brokerProfileType: Joi.string().optional().allow("", null),
   yearsOfExperience: Joi.number().integer().min(0).optional().allow(null),
   bio: Joi.string().max(2000).optional().allow("", null),
   specialization: Joi.string().max(200).optional().allow("", null),
@@ -22,6 +18,7 @@ const signupSchema = Joi.object({
 // Set password schema - used after OTP verification
 const setPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
+  setupToken: Joi.string().required(),
   password: Joi.string().min(8).required(),
   confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
     "any.only": "Passwords do not match",
@@ -49,9 +46,10 @@ const completeBrokerProfileSchema = Joi.object({
 
 // Signin schema
 const signinSchema = Joi.object({
-  identifier: Joi.string().required(),
+  identifier: Joi.string().optional(),
+  email: Joi.string().optional(),
   password: Joi.string().min(8).required(),
-});
+}).or("identifier", "email");
 
 // Refresh token schema
 const refreshTokenSchema = Joi.object({

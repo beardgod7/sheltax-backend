@@ -1,4 +1,4 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 const {
   getRegistrationConfirmationTemplate,
   getBroadcastTemplate,
@@ -6,28 +6,31 @@ const {
   getVolunteerConfirmationTemplate,
 } = require("../utils/emailTemplates");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  secure: process.env.SMTP_PORT === "465",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
-const FROM = process.env.SENDER_EMAIL || "onboarding@resend.dev";
-const FROM_NAME = process.env.SENDER_NAME || "Sheltax";
+const FROM_ADDRESS = process.env.EMAIL_FROM || `Sheltax <${process.env.SMTP_USER || "onboarding@sheltax.com"}>`;
 
 async function sendEmail({ to, subject, html, text }) {
   try {
-    const { error } = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM}>`,
+    const info = await transporter.sendMail({
+      from: FROM_ADDRESS,
       to,
       subject,
-      html,
       text,
+      html,
     });
-    if (error) {
-      console.error(`Resend error sending to ${to}:`, error);
-      return false;
-    }
-    console.log(`Email sent successfully to ${to}`);
+    console.log(`Email sent successfully via Gmail SMTP to ${to} (MessageID: ${info.messageId})`);
     return true;
   } catch (err) {
-    console.error(`Failed to send email to ${to}:`, err.message);
+    console.error(`Failed to send email via SMTP to ${to}:`, err.message);
     return false;
   }
 }
@@ -71,6 +74,15 @@ async function sendVerificationCodeEmail(email, verificationCode) {
         <p style="color: #666; font-size: 12px;">Best regards,<br>Sheltax Team</p>
       </div>
     `,
+  });
+}
+
+async function sendModerationEmail(email, firstName, subject, message) {
+  return sendEmail({
+    to: email,
+    subject,
+    text: `${firstName || "Hello"},\n\n${message}`,
+    html: `<p>Hello ${firstName || "there"},</p><p>${message}</p>`,
   });
 }
 
@@ -148,7 +160,7 @@ async function sendReadingVisitConfirmation(email, visitDetails) {
 
 async function sendLibrarianContactNotification(contactDetails) {
   const { name, email, subject, message } = contactDetails;
-  const to = process.env.LIBRARIAN_EMAIL || FROM;
+  const to = process.env.LIBRARIAN_EMAIL || FROM_ADDRESS;
   return sendEmail({
     to,
     subject: `Library Contact: ${subject || "New Message"}`,
@@ -179,7 +191,7 @@ async function sendRentalRequestConfirmation(email, requestDetails) {
 
 async function sendRentalRequestNotification(requestDetails) {
   const { fullName, organization, email, phoneNumber, artifactTitle, identificationNumber, purposeOfRental, startDate, endDate, message } = requestDetails;
-  const to = process.env.MUSEUM_ADMIN_EMAIL || FROM;
+  const to = process.env.MUSEUM_ADMIN_EMAIL || FROM_ADDRESS;
   return sendEmail({
     to,
     subject: `New Artifact Rental Request: ${identificationNumber}`,
@@ -190,7 +202,7 @@ async function sendRentalRequestNotification(requestDetails) {
 
 async function sendCollaborationRequestNotification(requestDetails) {
   const { name, organization, email, message } = requestDetails;
-  const to = process.env.MUSEUM_ADMIN_EMAIL || FROM;
+  const to = process.env.MUSEUM_ADMIN_EMAIL || FROM_ADDRESS;
   return sendEmail({
     to,
     subject: "New Museum Collaboration Request",
@@ -244,7 +256,7 @@ async function sendFilmScreeningReminder(email, reminderDetails) {
 
 async function sendFilmInquiryNotification(inquiryDetails) {
   const { fullName, email, phoneNumber, filmTitle, message } = inquiryDetails;
-  const to = process.env.FILMS_ADMIN_EMAIL || FROM;
+  const to = process.env.FILMS_ADMIN_EMAIL || FROM_ADDRESS;
   return sendEmail({
     to,
     subject: `New Film Inquiry: ${filmTitle}`,
@@ -255,6 +267,7 @@ async function sendFilmInquiryNotification(inquiryDetails) {
 
 module.exports = {
   sendVerificationCodeEmail,
+  sendModerationEmail,
   sendResetCodeEmail,
   sendRegistrationConfirmation,
   sendVolunteerConfirmation,

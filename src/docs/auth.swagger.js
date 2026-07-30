@@ -268,8 +268,6 @@
  *       - **Seeker:** OTP sent at signup (Step 1)
  *       - **Owner/Broker:** OTP sent after verify-identity (Step 3)
  *
- *       **Fallback OTP: 123456** (verifies all unverified accounts)
- *
  *       **Next step:** POST /auth/set-password
  *     tags: [Authentication]
  *     parameters:

@@ -385,7 +385,7 @@ async function deleteProfile(userId, userRole) {
 /**
  * Gets all profiles with optional filtering
  */
-async function getAllProfiles(filters = {}) {
+async function getAllProfiles(filters = {}, pagination = { limit: 20, offset: 0 }) {
   try {
     const whereClause = {};
     const preferenceWhereClause = {};
@@ -405,7 +405,7 @@ async function getAllProfiles(filters = {}) {
       preferenceWhereClause.budgetMax = { [Op.lte]: filters.budgetMax };
     }
 
-    const profiles = await Profile.findAll({
+    return Profile.findAndCountAll({
       where: whereClause,
       include: [
         {
@@ -433,9 +433,10 @@ async function getAllProfiles(filters = {}) {
         },
       ],
       order: [["createdAt", "DESC"]],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      distinct: true,
     });
-
-    return profiles;
   } catch (error) {
     console.error("Error getting all profiles:", error);
     throw error;
@@ -445,7 +446,7 @@ async function getAllProfiles(filters = {}) {
 /**
  * Gets all broker profiles with optional filtering
  */
-async function getAllBrokerProfiles(filters = {}) {
+async function getAllBrokerProfiles(filters = {}, pagination = { limit: 20, offset: 0 }) {
   try {
     const whereClause = {};
 
@@ -453,7 +454,7 @@ async function getAllBrokerProfiles(filters = {}) {
       whereClause.isVerified = filters.isVerified;
     }
 
-    const brokerProfiles = await BrokerProfile.findAll({
+    return BrokerProfile.findAndCountAll({
       where: whereClause,
       include: [
         {
@@ -463,9 +464,10 @@ async function getAllBrokerProfiles(filters = {}) {
         },
       ],
       order: [["createdAt", "DESC"]],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      distinct: true,
     });
-
-    return brokerProfiles;
   } catch (error) {
     console.error("Error getting all broker profiles:", error);
     throw error;
@@ -475,7 +477,7 @@ async function getAllBrokerProfiles(filters = {}) {
 /**
  * Gets all owner profiles with optional filtering
  */
-async function getAllOwnerProfiles(filters = {}) {
+async function getAllOwnerProfiles(filters = {}, pagination = { limit: 20, offset: 0 }) {
   try {
     const whereClause = {};
 
@@ -483,7 +485,7 @@ async function getAllOwnerProfiles(filters = {}) {
       whereClause.isVerified = filters.isVerified;
     }
 
-    const ownerProfiles = await OwnerProfile.findAll({
+    return OwnerProfile.findAndCountAll({
       where: whereClause,
       include: [
         {
@@ -493,9 +495,10 @@ async function getAllOwnerProfiles(filters = {}) {
         },
       ],
       order: [["createdAt", "DESC"]],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      distinct: true,
     });
-
-    return ownerProfiles;
   } catch (error) {
     console.error("Error getting all owner profiles:", error);
     throw error;

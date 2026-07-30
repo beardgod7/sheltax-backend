@@ -5,6 +5,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "test": "node --test test/**/*.test.js",
+    "migrate": "node scripts/run-migration.js 20260728-canonical-listings-and-review-history.sql",
+    "migrate:inspection-outcome": "node scripts/run-migration.js 20260728-inspection-completion-and-outcome.sql",
+    "migrate:payments": "node scripts/run-migration.js 20260728-payments-and-listing-availability.sql",
+    "migrate:reviews": "node scripts/run-migration.js 20260729-property-reviews.sql",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -14,6 +19,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
+    "@neondatabase/serverless": "^1.1.0",
     "@nestjs/config": "^4.0.2",
     "@sendgrid/mail": "^8.1.5",
     "axios": "^1.6.0",
@@ -51,7 +57,8 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.8.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "eslint": "^9.19.0",

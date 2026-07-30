@@ -118,7 +118,7 @@ const SaleProperty = sequelize.define(
     status: {
       type: DataTypes.ENUM("active", "sold", "inactive", "under_review"),
       allowNull: false,
-      defaultValue: "active",
+      defaultValue: "under_review",
     },
     // Listing status for admin/moderation
     listingStatus: {

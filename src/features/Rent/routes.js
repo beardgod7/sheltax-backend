@@ -5,6 +5,7 @@ const { authenticate } = require("../../middleware/authentication");
 const { authorize } = require("../../middleware/rolemiddleware");
 
 // Public routes (no authentication required)
+router.get("/", rentalController.searchRentalProperties);
 router.get("/search", rentalController.searchRentalProperties);
 router.get("/:id", rentalController.getRentalProperty);
 

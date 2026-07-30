@@ -12,80 +12,34 @@ const createShortletPropertySchema = Joi.object({
     "string.max": "Description cannot exceed 2000 characters",
     "any.required": "Description is required",
   }),
-  propertyType: Joi.string()
-    .valid("apartment", "house", "duplex", "bungalow", "flat", "room", "studio", "hotel", "resort")
-    .required()
-    .messages({
-      "any.only": "Property type must be one of: apartment, house, duplex, bungalow, flat, room, studio, hotel, resort",
-      "any.required": "Property type is required",
-    }),
+  propertyType: Joi.string().optional().allow("", null),
+  intent: Joi.string().optional().allow("", null),
+  purpose: Joi.string().optional().allow("", null),
+  location: Joi.string().optional().allow("", null),
   // Location
-  address: Joi.string().min(10).max(500).required().messages({
-    "string.min": "Address must be at least 10 characters long",
-    "string.max": "Address cannot exceed 500 characters",
-    "any.required": "Address is required",
-  }),
-  city: Joi.string().min(2).max(100).required().messages({
-    "string.min": "City must be at least 2 characters long",
-    "string.max": "City cannot exceed 100 characters",
-    "any.required": "City is required",
-  }),
-  state: Joi.string().min(2).max(100).required().messages({
-    "string.min": "State must be at least 2 characters long",
-    "string.max": "State cannot exceed 100 characters",
-    "any.required": "State is required",
-  }),
+  address: Joi.string().min(2).max(500).optional().allow("", null),
+  city: Joi.string().min(2).max(100).optional().allow("", null),
+  state: Joi.string().min(2).max(100).optional().allow("", null),
   area: Joi.string().min(2).max(100).optional(),
   // Property details
-  bedrooms: Joi.number().integer().min(0).max(20).required().messages({
-    "number.min": "Bedrooms cannot be negative",
-    "number.max": "Bedrooms cannot exceed 20",
-    "any.required": "Number of bedrooms is required",
-  }),
-  bathrooms: Joi.number().integer().min(0).max(20).required().messages({
-    "number.min": "Bathrooms cannot be negative",
-    "number.max": "Bathrooms cannot exceed 20",
-    "any.required": "Number of bathrooms is required",
-  }),
-  toilets: Joi.number().integer().min(0).max(20).optional(),
-  maxGuests: Joi.number().integer().min(1).max(50).required().messages({
-    "number.min": "Maximum guests must be at least 1",
-    "number.max": "Maximum guests cannot exceed 50",
-    "any.required": "Maximum number of guests is required",
-  }),
+  bedrooms: Joi.number().integer().min(0).max(50).optional().allow(null),
+  bathrooms: Joi.number().integer().min(0).max(50).optional().allow(null),
+  sittingRooms: Joi.number().integer().min(0).max(50).optional().allow(null),
+  toilets: Joi.number().integer().min(0).max(50).optional().allow(null),
+  maxGuests: Joi.number().integer().min(1).max(50).optional().allow(null),
   // Shortlet pricing
-  pricePerNight: Joi.number().positive().required().messages({
-    "number.positive": "Price per night must be a positive number",
-    "any.required": "Price per night is required",
-  }),
-  pricePerWeek: Joi.number().positive().optional(),
-  pricePerMonth: Joi.number().positive().optional(),
+  pricePerNight: Joi.number().positive().optional().allow(null),
+  price: Joi.number().positive().optional().allow(null),
   currency: Joi.string().length(3).optional().default("NGN"),
-  securityDeposit: Joi.number().positive().optional(),
-  cleaningFee: Joi.number().positive().optional(),
-  serviceFee: Joi.number().positive().optional(),
-  // Booking rules
-  minimumStay: Joi.number().integer().min(1).max(365).optional().default(1),
-  maximumStay: Joi.number().integer().min(1).max(365).optional(),
-  checkInTime: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/).optional(),
-  checkOutTime: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/).optional(),
-  instantBooking: Joi.boolean().optional().default(false),
-  // Features and amenities
-  features: Joi.array().items(Joi.string()).optional(),
-  amenities: Joi.array().items(Joi.string()).optional(),
-  houseRules: Joi.array().items(Joi.string()).optional(),
   // Media
-  images: Joi.array().items(Joi.string().uri()).optional(),
-  virtualTourUrl: Joi.string().uri().optional(),
-  // Availability
-  availableFrom: Joi.date().optional(),
-  availableTo: Joi.date().optional(),
+  images: Joi.array().items(Joi.string()).optional(),
+  virtualTourUrl: Joi.string().uri().optional().allow("", null),
   // Tag field
   tag: Joi.string()
     .valid("rent", "buy", "swap", "shortlet")
     .optional()
     .default("shortlet"),
-});
+}).unknown(true);
 
 // Update shortlet property schema
 const updateShortletPropertySchema = Joi.object({
@@ -246,7 +200,7 @@ const searchShortletPropertiesSchema = Joi.object({
   // Pagination
   page: Joi.number().integer().min(1).optional().default(1),
   limit: Joi.number().integer().min(1).max(100).optional().default(20),
-});
+}).unknown(true);
 
 // Property verification schema (Admin only)
 const verifyShortletPropertySchema = Joi.object({

@@ -5,6 +5,7 @@ const { authenticate } = require("../../middleware/authentication");
 const { authorize } = require("../../middleware/rolemiddleware");
 
 // Public routes (no authentication required)
+router.get("/", shortletController.searchShortletProperties);
 router.get("/search", shortletController.searchShortletProperties);
 router.get("/:id", shortletController.getShortletProperty);
 

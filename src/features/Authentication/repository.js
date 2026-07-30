@@ -118,9 +118,14 @@ async function findRefreshToken(token) {
     throw error;
   }
 }
-async function getAllUsersWithProfiles() {
+async function getAllUsersWithProfiles(pagination) {
   try {
-    return await User.findAll({});
+    return await User.findAndCountAll({
+      attributes: { exclude: ["password"] },
+      order: [["createdAt", "DESC"]],
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
   } catch (error) {
     console.error("Error fetching users with profiles:", error);
     throw error;

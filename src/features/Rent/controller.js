@@ -22,9 +22,11 @@ class RentalController {
         });
       }
 
+      value.rentAmount = value.rentAmount || value.price || req.body.price || req.body.rentAmount || 0;
+
       const property = await rentalRepository.createRentalProperty(
         value,
-        req.user.sub
+        req.user.sub || req.user.id || req.user.userId
       );
 
       res.status(201).json({

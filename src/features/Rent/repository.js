@@ -1,5 +1,6 @@
 const { Op, Sequelize } = require("sequelize");
 const { RentalProperty, RentalInquiry, RentalFavorite } = require("./model");
+const { MainProperty } = require("../Owner/model");
 const { User } = require("../Authentication/model");
 
 class RentalRepository {
@@ -9,7 +10,36 @@ class RentalRepository {
       const property = await RentalProperty.create({
         ...propertyData,
         ownerId,
+        listingStatus: "pending",
+        status: "under_review",
+        isVerified: false,
       });
+
+      // Also mirror to MainProperty table for multi-table compatibility
+      try {
+        await MainProperty.create({
+          id: property.id,
+          title: propertyData.title || "Untitled Property",
+          description: propertyData.description || "",
+          intent: (propertyData.intent || propertyData.listingIntent || "RENT").toUpperCase(),
+          propertyType: propertyData.propertyType || "apartment",
+          price: propertyData.rentAmount || propertyData.price || 0,
+          currency: propertyData.currency || "NGN",
+          location: propertyData.location || propertyData.address || "Lagos, Nigeria",
+          city: propertyData.city || "Lagos",
+          state: propertyData.state || "Lagos",
+          bedrooms: propertyData.bedrooms || 0,
+          bathrooms: propertyData.bathrooms || 0,
+          sittingRooms: propertyData.sittingRooms || 0,
+          tags: propertyData.tags || [],
+          images: propertyData.images || [],
+          approvalStatus: "PENDING",
+          ownerId,
+        });
+      } catch (err) {
+        console.error("MainProperty sync warning:", err.message);
+      }
+
       return property;
     } catch (error) {
       throw new Error(`Failed to create rental property: ${error.message}`);
@@ -24,7 +54,7 @@ class RentalRepository {
         includes.push({
           model: User,
           as: "owner",
-          attributes: ["id", "username", "email"],
+          attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
         });
       }
 
@@ -149,6 +179,8 @@ class RentalRepository {
       }
       if (listingStatus) {
         whereConditions.listingStatus = listingStatus;
+      } else if (!filters.allStatuses) {
+        whereConditions.listingStatus = "active";
       }
 
       // Date filters
@@ -176,7 +208,7 @@ class RentalRepository {
           {
             model: User,
             as: "owner",
-            attributes: ["id", "username", "email"],
+            attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
           },
         ],
         order,
@@ -365,7 +397,7 @@ class RentalRepository {
           {
             model: User,
             as: "inquirer",
-            attributes: ["id", "username", "email"],
+            attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -501,7 +533,7 @@ class RentalRepository {
               {
                 model: User,
                 as: "owner",
-                attributes: ["id", "username", "email"],
+                attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
               },
             ],
           },

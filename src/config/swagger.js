@@ -18,7 +18,7 @@ const options = {
         description: "Production server",
       },
       {
-        url: "http://localhost:7000/v1/api",
+        url: `http://localhost:${process.env.PORT || 7001}/api/v1`,
         description: "Development server",
       },
     ],

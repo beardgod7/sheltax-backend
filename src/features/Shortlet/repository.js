@@ -9,6 +9,9 @@ class ShortletRepository {
       const property = await ShortletProperty.create({
         ...propertyData,
         ownerId,
+        listingStatus: "pending",
+        status: "under_review",
+        isVerified: false,
       });
       return property;
     } catch (error) {
@@ -24,7 +27,7 @@ class ShortletRepository {
         includes.push({
           model: User,
           as: "owner",
-          attributes: ["id", "username", "email"],
+          attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
         });
       }
 
@@ -200,6 +203,8 @@ class ShortletRepository {
       }
       if (listingStatus) {
         whereConditions.listingStatus = listingStatus;
+      } else if (!filters.allStatuses) {
+        whereConditions.listingStatus = "active";
       }
 
       // Tag filter
@@ -220,7 +225,7 @@ class ShortletRepository {
           {
             model: User,
             as: "owner",
-            attributes: ["id", "username", "email"],
+            attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
           },
         ],
         order,
@@ -409,7 +414,7 @@ class ShortletRepository {
           {
             model: User,
             as: "inquirer",
-            attributes: ["id", "username", "email"],
+            attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -545,7 +550,7 @@ class ShortletRepository {
               {
                 model: User,
                 as: "owner",
-                attributes: ["id", "username", "email"],
+                attributes: ["id", "username", "email", "firstName", "surname", "profilePicture", "role", "verified"],
               },
             ],
           },

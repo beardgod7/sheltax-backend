@@ -38,6 +38,22 @@ const User = sequelize.define(
       allowNull: true,
     },
     ninVerification: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    governmentId: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    ninCacDocument: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    profilePicture: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    businessRegistrationNumber: {
       type: DataTypes.STRING,
       allowNull: true,
     },
@@ -95,15 +111,6 @@ const User = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    // Identity verification fields (step 3 for owner/broker)
-    governmentId: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    ninCacDocument: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
     // Registration progress tracking
     registrationStep: {
       type: DataTypes.INTEGER,
@@ -125,10 +132,6 @@ const User = sequelize.define(
       allowNull: true,
       unique: true,
     },
-    profilePicture: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
     signup_channel: {
       type: DataTypes.ENUM("manual", "google", "twitter", "facebook"),
       allowNull: false,
@@ -143,6 +146,20 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false,
+    },
+    kycStatus: {
+      type: DataTypes.STRING,
+      defaultValue: "UNSUBMITTED",
+      allowNull: false,
+    },
+    kycLevel: {
+      type: DataTypes.STRING,
+      defaultValue: "BASIC",
+      allowNull: true,
+    },
+    kycRejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
   },
   {

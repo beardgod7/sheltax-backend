@@ -126,7 +126,7 @@ const RentalProperty = sequelize.define(
     status: {
       type: DataTypes.ENUM("active", "rented", "inactive", "under_review"),
       allowNull: false,
-      defaultValue: "active",
+      defaultValue: "under_review",
     },
     // Listing status for admin/moderation
     listingStatus: {

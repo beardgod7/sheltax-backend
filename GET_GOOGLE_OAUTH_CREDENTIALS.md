@@ -69,14 +69,14 @@ Follow these detailed steps to get your Google OAuth credentials for the Sheltax
 3. **Authorized JavaScript origins**: Add these URLs:
    ```
    http://localhost:3000
-   http://localhost:7000
+   http://localhost:7001
    https://yourdomain.com (for production later)
    ```
 
 4. **Authorized redirect URIs**: Add these URLs:
    ```
    http://localhost:3000/auth/google/callback
-   http://localhost:7000/auth/google/callback
+   http://localhost:7001/auth/google/callback
    https://yourdomain.com/auth/google/callback (for production later)
    ```
 
@@ -119,7 +119,7 @@ npm run dev
 ### 2. Test the OAuth Endpoint
 
 You can test using Swagger UI:
-1. Go to: **http://localhost:7000/api-docs**
+1. Go to: **http://localhost:7001/api-docs**
 2. Find the **"Authentication"** section
 3. Look for **"POST /auth/google-oauth"**
 4. Click **"Try it out"**

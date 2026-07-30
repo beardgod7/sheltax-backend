@@ -226,19 +226,26 @@ export class PaymentRepository {
     const row = await Payment.findOne({
       where,
       attributes: [
-        [fn('COUNT', col('id')), 'successfulDeals'],
-        [fn('COALESCE', fn('SUM', col('amount')), 0), 'grossVolume'],
+        [fn('COUNT', col('id')), 'count'],
+        [fn('COALESCE', fn('SUM', col('amount')), 0), 'grossValue'],
         [fn('COALESCE', fn('SUM', col('platformFee')), 0), 'platformFees'],
         [fn('COALESCE', fn('SUM', col('totalAmount')), 0), 'totalCollected'],
       ],
       raw: true,
     });
 
+    const count = Number((row as any)?.count || 0);
+    const grossValue = Number((row as any)?.grossValue || 0);
+    const platformFees = Number((row as any)?.platformFees || 0);
+    const totalCollected = Number((row as any)?.totalCollected || 0);
+
     return {
-      successfulDeals: Number((row as any)?.successfulDeals || 0),
-      grossVolume: Number((row as any)?.grossVolume || 0),
-      platformFees: Number((row as any)?.platformFees || 0),
-      totalCollected: Number((row as any)?.totalCollected || 0),
+      count,
+      grossValue,
+      platformFees,
+      totalCollected,
+      successfulDeals: count,
+      grossVolume: grossValue,
     };
   }
 

@@ -349,10 +349,10 @@ export const UserActivity = sequelize.define(
 Profile.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasOne(Profile, { foreignKey: 'userId', as: 'profile' });
 
-BrokerProfile.belongsTo(User, { foreignKey: 'userId', as: 'brokerProfile' });
+BrokerProfile.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasOne(BrokerProfile, { foreignKey: 'userId', as: 'brokerProfile' });
 
-OwnerProfile.belongsTo(User, { foreignKey: 'userId', as: 'ownerProfile' });
+OwnerProfile.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasOne(OwnerProfile, { foreignKey: 'userId', as: 'ownerProfile' });
 
 SeekerPreference.belongsTo(Profile, { foreignKey: 'profileId', as: 'profile' });

@@ -1,15 +1,16 @@
 {
   "name": "vtb-backend",
   "version": "1.0.0",
-  "main": "src/server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "node --test test/**/*.test.js",
-    "migrate": "node scripts/run-migration.js 20260728-canonical-listings-and-review-history.sql",
-    "migrate:inspection-outcome": "node scripts/run-migration.js 20260728-inspection-completion-and-outcome.sql",
-    "migrate:payments": "node scripts/run-migration.js 20260728-payments-and-listing-availability.sql",
-    "migrate:reviews": "node scripts/run-migration.js 20260729-property-reviews.sql",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "test": "tsx --test test/**/*.test.ts",
+    "migrate": "tsx scripts/run-migration.ts 20260728-canonical-listings-and-review-history.sql",
+    "migrate:inspection-outcome": "tsx scripts/run-migration.ts 20260728-inspection-completion-and-outcome.sql",
+    "migrate:payments": "tsx scripts/run-migration.ts 20260728-payments-and-listing-availability.sql",
+    "migrate:reviews": "tsx scripts/run-migration.ts 20260729-property-reviews.sql",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -61,9 +62,22 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.1.2",
+    "@types/nodemailer": "^8.0.1",
+    "@types/passport": "^1.0.17",
+    "@types/pg": "^8.20.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "eslint": "^9.19.0",
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
-    "sequelize-cli": "^6.6.2"
+    "sequelize-cli": "^6.6.2",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
   }
 }

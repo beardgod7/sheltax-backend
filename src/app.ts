@@ -1,49 +1,71 @@
-import express, { Express } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
-import routes from './routes';
-import { errorHandler } from './middlewares/error.middleware';
-import { httpLogger } from './middlewares/logger.middleware';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import http from 'http';
+import dotenv from 'dotenv';
+import routes from './routes/index';
+import { errorHandler } from './middleware/errorhandler';
+import client from 'prom-client';
+import responseTime from 'response-time';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger';
 
-const app: Express = express();
+dotenv.config();
 
-const defaultAllowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-];
+const app = express();
+const server = http.createServer(app);
 
-const envOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((item) => item.trim())
-  : [];
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
 
-const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...envOrigins]));
+const httpRequestDurationMicroseconds = new client.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duration of HTTP requests in ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [50, 100, 300, 500, 1000, 2000],
+});
+register.registerMetric(httpRequestDurationMicroseconds);
 
-// Middlewares
+const httpRequestCount = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'code'],
+});
+register.registerMetric(httpRequestCount);
+
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-        return callback(null, true);
-      }
-      // Allow localhost on any port in development
-      if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
-        return callback(null, true);
-      }
-      return callback(null, true);
-    },
-    credentials: true,
+  responseTime((req: Request, res: Response, time: number) => {
+    if ((req as any).route && (req as any).route.path) {
+      httpRequestDurationMicroseconds
+        .labels(req.method, (req as any).route.path, String(res.statusCode))
+        .observe(time);
+      httpRequestCount.labels(req.method, (req as any).route.path, String(res.statusCode)).inc();
+    }
   })
 );
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(httpLogger);
 
-// API Routes
-app.use('/api', routes);
+app.use(cors({ origin: '*', credentials: false }));
+
+app.get('/metrics', async (req: Request, res: Response) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
+app.use(helmet());
+app.use(morgan('combined'));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Shelta-X API Documentation',
+}));
+
+app.use('/api/v1', routes);
 app.use('/v1/api', routes);
+app.use('/api', routes);
 
-// Centralized Error Handling
 app.use(errorHandler);
 
-export default app;
+export { app, server };

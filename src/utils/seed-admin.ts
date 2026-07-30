@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { connectDB } from '../config/database';
-import { User } from '../models';
+import sequelize from '../config/dbconfig';
+import { User } from '../features/Authentication/model';
 import logger from './logger';
 
 export async function seedSuperAdmin() {
@@ -10,7 +10,7 @@ export async function seedSuperAdmin() {
 
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-    let admin = await User.findOne({ where: { email: adminEmail } });
+    let admin: any = await User.findOne({ where: { email: adminEmail } });
 
     if (admin) {
       admin.password = hashedPassword;
@@ -36,9 +36,8 @@ export async function seedSuperAdmin() {
   }
 }
 
-// Allow direct execution via ts-node
 if (require.main === module) {
-  connectDB().then(() => {
+  sequelize.authenticate().then(() => {
     seedSuperAdmin().then(() => {
       process.exit(0);
     });

@@ -1,18 +1,19 @@
-import { sequelize } from '../config/database';
-import { User, Property } from '../models';
+import sequelize from '../config/dbconfig';
+import { User } from '../features/Authentication/model';
+import { Listing } from '../features/Listing/model';
 
 export async function cleanupSeededProperties() {
   try {
     await sequelize.authenticate();
     console.log('🔌 Connected to database.');
 
-    const seedOwner = await User.findOne({
+    const seedOwner: any = await User.findOne({
       where: { email: 'owner@sheltax.com' },
     });
 
     if (seedOwner) {
       console.log(`👤 Seed owner found: ${seedOwner.email} (${seedOwner.id})`);
-      const deletedCount = await Property.destroy({
+      const deletedCount = await Listing.destroy({
         where: {
           ownerId: seedOwner.id,
         },

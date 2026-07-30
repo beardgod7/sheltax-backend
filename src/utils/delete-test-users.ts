@@ -1,4 +1,7 @@
-import { sequelize, User, SeekerProfile, OwnerProfile, BrokerProfile, SavedProperty } from '../models';
+import sequelize from '../config/dbconfig';
+import { User } from '../features/Authentication/model';
+import { Profile, OwnerProfile, BrokerProfile } from '../features/Profile/model';
+import { SavedListing } from '../features/SavedListing/model';
 
 const targetEmails = [
   'igwechinonso77@gmail.com',
@@ -12,13 +15,12 @@ async function run() {
     console.log('Database connected.');
 
     for (const email of targetEmails) {
-      const user = await User.findOne({ where: { email } });
+      const user: any = await User.findOne({ where: { email } });
       if (user) {
-        // Explicitly clean up profiles & saved properties
-        await SeekerProfile.destroy({ where: { userId: user.id } });
+        await Profile.destroy({ where: { userId: user.id } });
         await OwnerProfile.destroy({ where: { userId: user.id } });
         await BrokerProfile.destroy({ where: { userId: user.id } });
-        await SavedProperty.destroy({ where: { userId: user.id } });
+        await SavedListing.destroy({ where: { userId: user.id } });
         await user.destroy();
         console.log(`✅ Deleted user: ${email} (${user.id})`);
       } else {

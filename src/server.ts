@@ -1,30 +1,15 @@
-import app from './app';
-import { connectDB } from './config/database';
-import { initModels } from './models';
-import logger from './utils/logger';
-import { seedSuperAdmin } from './utils/seed-admin';
+import { server } from './app';
 
-const PORT = parseInt(process.env.PORT || '5001', 10);
-const HOST = '0.0.0.0';
+const PORT = process.env.PORT || 8000;
 
-const startServer = async (): Promise<void> => {
-  try {
-    await connectDB();
-    try {
-      await initModels();
-      await seedSuperAdmin();
-    } catch (dbErr) {
-      logger.warn('DB initialization or seed skipped:', (dbErr as Error)?.message || dbErr);
-    }
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 
-    app.listen(PORT, HOST, () => {
-      logger.success(`Shelta-X Backend server running on http://${HOST}:${PORT}`);
-      logger.info(`Health check endpoint: http://${HOST}:${PORT}/api/health`);
-    });
-  } catch (error) {
-    logger.error('Server startup failed:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
+process.on('SIGINT', () => {
+  console.log('Shutting down server...');
+  server.close(() => {
+    console.log('Server closed gracefully.');
+    process.exit(0);
+  });
+});

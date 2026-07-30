@@ -1,4 +1,7 @@
-import { sequelize, User, OwnerProfile, Property } from '../models';
+import sequelize from '../config/dbconfig';
+import { User } from '../features/Authentication/model';
+import { OwnerProfile } from '../features/Profile/model';
+import { Listing } from '../features/Listing/model';
 
 const imagePool = [
   'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop',
@@ -28,7 +31,6 @@ const imagePool = [
 ];
 
 function getPropertyImages(index: number): string[] {
-  // Guaranteed minimum of 8 images (range 8 to 12)
   const count = 8 + (index % 5);
   const start = (index * 3) % imagePool.length;
   const result: string[] = [];
@@ -41,7 +43,6 @@ function getPropertyImages(index: number): string[] {
     }
   }
 
-  // Fallback to ensure we hit full count
   while (result.length < count) {
     const fallbackUrl = imagePool[result.length % imagePool.length];
     result.push(fallbackUrl);
@@ -51,7 +52,6 @@ function getPropertyImages(index: number): string[] {
 }
 
 const locations = [
-  // Lagos
   { location: 'Lekki Phase 1, Lagos', city: 'Lekki', state: 'Lagos' },
   { location: 'Banana Island, Ikoyi, Lagos', city: 'Ikoyi', state: 'Lagos' },
   { location: 'Victoria Island, Lagos', city: 'Victoria Island', state: 'Lagos' },
@@ -62,7 +62,6 @@ const locations = [
   { location: 'Surulere, Lagos', city: 'Surulere', state: 'Lagos' },
   { location: 'Gbagada Phase 2, Lagos', city: 'Gbagada', state: 'Lagos' },
   { location: 'Magodo Phase 2, Lagos', city: 'Magodo', state: 'Lagos' },
-  // Abuja
   { location: 'Maitama, Abuja', city: 'Maitama', state: 'Abuja' },
   { location: 'Asokoro District, Abuja', city: 'Asokoro', state: 'Abuja' },
   { location: 'Wuse 2, Abuja', city: 'Wuse', state: 'Abuja' },
@@ -73,7 +72,6 @@ const locations = [
   { location: 'Utako District, Abuja', city: 'Utako', state: 'Abuja' },
   { location: 'Jabi Lake Area, Abuja', city: 'Jabi', state: 'Abuja' },
   { location: 'F01 Estate Kubwa, Abuja', city: 'Kubwa', state: 'Abuja' },
-  // Port Harcourt & Ibadan
   { location: 'GRA Phase 2, Port Harcourt', city: 'Port Harcourt', state: 'Rivers' },
   { location: 'Bodija Estate, Ibadan', city: 'Ibadan', state: 'Oyo' },
 ];
@@ -103,8 +101,7 @@ export const seedDatabase = async () => {
     console.log('🌱 Starting database seeding for 100 properties...');
     await sequelize.sync({ alter: true });
 
-    // 1. Create or update Demo Owner User
-    const [ownerUser] = await User.findOrCreate({
+    const [ownerUser]: [any, boolean] = await User.findOrCreate({
       where: { email: 'owner@sheltax.com' },
       defaults: {
         email: 'owner@sheltax.com',
@@ -130,10 +127,8 @@ export const seedDatabase = async () => {
 
     console.log(`👤 Owner user created/verified: ${ownerUser.email} (${ownerUser.id})`);
 
-    // 2. Clear existing properties before seeding fresh set
-    await Property.destroy({ where: {} });
+    await Listing.destroy({ where: {} });
 
-    // 3. Generate 100 Properties
     const propertySeeds = [];
 
     for (let i = 0; i < 100; i++) {
@@ -144,26 +139,23 @@ export const seedDatabase = async () => {
       const bathrooms = bedrooms + (i % 2);
       const sittingRooms = Math.min(2, Math.max(1, Math.floor(bedrooms / 2)));
 
-      // Determine intent (approx 35% RENT, 35% BUY, 20% SHORTLET, 10% SWAP)
       let intent: 'RENT' | 'BUY' | 'SHORTLET' | 'SWAP';
       let price: number;
 
       if (i % 10 < 3.5) {
         intent = 'RENT';
-        price = (2 + (i % 25)) * 1_000_000; // 2M to 26M
+        price = (2 + (i % 25)) * 1_000_000;
       } else if (i % 10 < 7) {
         intent = 'BUY';
-        price = (20 + (i * 3) % 180) * 1_000_000; // 20M to 200M
+        price = (20 + (i * 3) % 180) * 1_000_000;
       } else if (i % 10 < 9) {
         intent = 'SHORTLET';
-        price = (60 + (i % 20) * 15) * 1_000; // 60k to 345k / night
+        price = (60 + (i % 20) * 15) * 1_000;
       } else {
         intent = 'SWAP';
         price = 0;
       }
 
-      // Featured & Popular flags
-      // First 6 of each intent are featured for homepage carousel consistency
       const isFeatured = i < 24 && (i % 4 === 0 || i % 4 === 1);
       const isPopular = (i % 5 === 0) || (i >= 75 && i < 90);
 
@@ -187,11 +179,12 @@ export const seedDatabase = async () => {
         images: getPropertyImages(i),
         isFeatured,
         isPopular,
+        approvalStatus: 'APPROVED',
         ownerId: ownerUser.id,
       });
     }
 
-    const createdProperties = await Property.bulkCreate(propertySeeds);
+    const createdProperties = await Listing.bulkCreate(propertySeeds);
     console.log(`✅ Successfully seeded ${createdProperties.length} distinct properties!`);
   } catch (error) {
     console.error('❌ Error seeding database:', error);
@@ -199,7 +192,6 @@ export const seedDatabase = async () => {
   }
 };
 
-// Execute if run directly via CLI
 if (require.main === module) {
   seedDatabase().then(() => {
     console.log('🎉 100 properties seeding script completed.');

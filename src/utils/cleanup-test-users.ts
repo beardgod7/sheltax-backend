@@ -1,5 +1,5 @@
-import { sequelize } from '../config/database';
-import { User } from '../models';
+import sequelize from '../config/dbconfig';
+import { User } from '../features/Authentication/model';
 import { Op } from 'sequelize';
 
 export async function cleanupTestUsers() {

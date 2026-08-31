@@ -398,10 +398,27 @@ export class PropertyRequestController {
       const responseId = strParam(req.params.responseId);
       const response = await propertyRequestRepository.getResponseById(responseId);
 
+      const reqUser = (req as any).user;
+      const currentUserId = reqUser?.sub || reqUser?.id;
+      const currentRole = reqUser?.role;
+
       if (!response) {
         res.status(404).json({
           success: false,
           message: 'Response not found',
+        });
+        return;
+      }
+
+      const resObj = response as any;
+      const isSeekerOwner = resObj.request && resObj.request.seekerId === currentUserId;
+      const isResponder = resObj.responderId === currentUserId;
+      const isAdmin = ['admin', 'super_admin'].includes(currentRole);
+
+      if (!isSeekerOwner && !isResponder && !isAdmin) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: You do not have permission to view this response.',
         });
         return;
       }

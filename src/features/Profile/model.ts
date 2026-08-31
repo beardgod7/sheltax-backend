@@ -106,6 +106,27 @@ export const BrokerProfile = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    licenceNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    licenceIssuer: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    licenceExpiryDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    licenceDocumentUrl: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    licenceStatus: {
+      type: DataTypes.ENUM('UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED'),
+      defaultValue: 'UNVERIFIED',
+      allowNull: false,
+    },
     isVerified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -122,7 +143,7 @@ export const BrokerProfile = sequelize.define(
   {
     tableName: 'BrokerProfiles',
     timestamps: true,
-    indexes: [{ fields: ['isVerified'] }],
+    indexes: [{ fields: ['isVerified'] }, { fields: ['licenceStatus'] }],
   }
 );
 

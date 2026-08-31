@@ -41,6 +41,7 @@ import {
   verificationDocumentsSchema,
 } from './schema';
 import { ReviewDecision } from '../Listing/model';
+import { UserVerification, VerificationDocument } from '../Verification/model';
 
 async function uploadToCloudinary(fileBuffer: Buffer, folder: string, resourceType = 'image'): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -409,6 +410,27 @@ export async function getMyProfile(req: Request, res: Response): Promise<void> {
   }
 }
 
+export function sanitizeProfile(profile: any, requesterId?: string, requesterRole?: string): any {
+  if (!profile) return null;
+  const p = typeof profile.toJSON === 'function' ? profile.toJSON() : { ...profile };
+
+  const isOwner = requesterId && (p.userId === requesterId || p.id === requesterId);
+  const isAdmin = requesterRole && ['admin', 'super_admin'].includes(requesterRole);
+
+  if (isOwner || isAdmin) {
+    return p;
+  }
+
+  delete p.governmentId;
+  delete p.ninCacDocument;
+  delete p.verificationDocuments;
+  delete p.creditScore;
+  delete p.monthlyIncome;
+  delete p.annualIncome;
+
+  return p;
+}
+
 export async function getProfileById(req: Request, res: Response): Promise<void> {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -440,7 +462,12 @@ export async function getProfileById(req: Request, res: Response): Promise<void>
       return;
     }
 
-    res.status(200).json({ message: 'Profile retrieved successfully', profile });
+    const reqUser = (req as any).user;
+    const requesterId = reqUser?.sub || reqUser?.id;
+    const requesterRole = reqUser?.role;
+    const sanitized = sanitizeProfile(profile, requesterId, requesterRole);
+
+    res.status(200).json({ message: 'Profile retrieved successfully', profile: sanitized });
   } catch (error: any) {
     console.error('Error getting profile by ID:', error);
     res.status(500).json({ message: 'Internal Server Error', error: error.message });
@@ -635,10 +662,17 @@ export async function getProfilesByUserRole(req: Request, res: Response): Promis
         break;
     }
 
+    const reqUser = (req as any).user;
+    const requesterId = reqUser?.sub || reqUser?.id;
+    const requesterRole = reqUser?.role;
+    const sanitizedRows = (result.rows || []).map((row: any) =>
+      sanitizeProfile(row, requesterId, requesterRole)
+    );
+
     res.status(200).json({
       success: true,
       message: `${role} profiles retrieved successfully`,
-      data: paginatedData('profiles', result.rows, result.count, pagination),
+      data: paginatedData('profiles', sanitizedRows, result.count, pagination),
     });
   } catch (error: any) {
     console.error('Error getting profiles by role:', error);
@@ -833,16 +867,83 @@ export async function submitKyc(req: Request, res: Response): Promise<void> {
     user.kycRejectionReason = null;
     await user.save();
 
-    const lastCycle = await ReviewDecision.max('cycle', {
+    const currentCycle = Number((await ReviewDecision.max('cycle', {
       where: { subjectType: 'KYC', subjectId: user.id },
-    });
+    })) || 0) + 1;
+
     await ReviewDecision.create({
       subjectType: 'KYC',
       subjectId: user.id,
-      cycle: Number(lastCycle || 0) + 1,
+      cycle: currentCycle,
       outcome: 'SUBMITTED',
       submittedBy: user.id,
     });
+
+    const [identityVerification] = await UserVerification.findOrCreate({
+      where: { userId: user.id, verificationType: 'IDENTITY' },
+      defaults: { status: 'PENDING', submittedAt: new Date(), cycle: currentCycle },
+    });
+    await identityVerification.update({ status: 'PENDING', submittedAt: new Date(), rejectionReason: null, cycle: currentCycle });
+
+    const [ninVerification] = await UserVerification.findOrCreate({
+      where: { userId: user.id, verificationType: 'NIN' },
+      defaults: { status: 'PENDING', submittedAt: new Date(), cycle: currentCycle },
+    });
+    await ninVerification.update({ status: 'PENDING', submittedAt: new Date(), rejectionReason: null, cycle: currentCycle });
+
+    const idVer = identityVerification as any;
+    const ninVer = ninVerification as any;
+
+    if (profilePictureUrl) {
+      await VerificationDocument.create({
+        userId: user.id,
+        verificationId: idVer.id,
+        documentType: 'PROFILE_PICTURE',
+        fileUrl: profilePictureUrl,
+        isPrivate: false,
+        status: 'PENDING',
+      });
+    }
+
+    if (governmentIdUrl) {
+      await VerificationDocument.create({
+        userId: user.id,
+        verificationId: idVer.id,
+        documentType: 'GOVERNMENT_ID',
+        fileUrl: governmentIdUrl,
+        isPrivate: true,
+        status: 'PENDING',
+      });
+    }
+
+    if (ninDocumentUrl) {
+      await VerificationDocument.create({
+        userId: user.id,
+        verificationId: ninVer.id,
+        documentType: 'NIN_SLIP',
+        fileUrl: ninDocumentUrl,
+        isPrivate: true,
+        status: 'PENDING',
+      });
+    }
+
+    if (cacDocumentUrl) {
+      const [cacVerification] = await UserVerification.findOrCreate({
+        where: { userId: user.id, verificationType: 'CAC' },
+        defaults: { status: 'PENDING', submittedAt: new Date(), cycle: currentCycle },
+      });
+      await cacVerification.update({ status: 'PENDING', submittedAt: new Date(), rejectionReason: null, cycle: currentCycle });
+      const cacVer = cacVerification as any;
+
+      await VerificationDocument.create({
+        userId: user.id,
+        verificationId: cacVer.id,
+        documentType: 'CAC_CERTIFICATE',
+        fileUrl: cacDocumentUrl,
+        isPrivate: true,
+        status: 'PENDING',
+      });
+    }
 
     if (user.role === 'owner') {
       const ownerProfile: any = await findOwnerProfileByUserId(userId);

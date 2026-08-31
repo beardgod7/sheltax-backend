@@ -45,9 +45,30 @@ app.use(
   })
 );
 
-app.use(cors({ origin: '*', credentials: false }));
+app.set('trust proxy', 1);
+
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
 
 app.get('/metrics', async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_METRICS_IN_PROD !== 'true') {
+    res.status(404).json({ message: 'Metrics disabled in production' });
+    return;
+  }
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
@@ -57,10 +78,16 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Shelta-X API Documentation',
-}));
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DOCS_IN_PROD === 'true') {
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Shelta-X API Documentation',
+    })
+  );
+}
 
 app.use('/api/v1', routes);
 app.use('/v1/api', routes);

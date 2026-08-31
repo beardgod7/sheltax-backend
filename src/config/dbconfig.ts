@@ -36,9 +36,11 @@ sequelize
   .authenticate()
   .then(async () => {
     console.log('Database connected successfully!');
-    if (process.env.DB_SYNC === 'true') {
+    try {
       await sequelize.sync({ alter: { drop: false } });
-      console.warn('DB_SYNC is enabled; models were synchronized automatically.');
+      console.log('Sequelize schema synchronized successfully.');
+    } catch (syncErr: any) {
+      console.error('Error synchronizing database schema:', syncErr?.message || syncErr);
     }
   })
   .catch((err) => {

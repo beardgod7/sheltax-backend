@@ -157,6 +157,20 @@ export const User = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    accountStatus: {
+      type: DataTypes.ENUM('ACTIVE', 'SUSPENDED', 'RESTRICTED'),
+      defaultValue: 'ACTIVE',
+      allowNull: false,
+    },
+    failedLoginAttempts: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
+    lockedUntil: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: 'User',

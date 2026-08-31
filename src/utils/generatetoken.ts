@@ -3,8 +3,16 @@ import crypto from 'crypto';
 
 const oneHourFromNow = (): Date => new Date(Date.now() + 60 * 60 * 1000);
 
+export function getJwtSecret(): Secret {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be set in environment variables and be at least 32 characters long.');
+  }
+  return secret;
+}
+
 export function generateAccessToken(userId: string, role: string): string {
-  const secret: Secret = process.env.JWT_SECRET || 'secret';
+  const secret = getJwtSecret();
   const options: SignOptions = {
     algorithm: 'HS256',
     expiresIn: '12h',
@@ -22,7 +30,7 @@ export function generateVerificationToken(userId: string) {
 }
 
 export function generateRefreshToken(userId: string): string {
-  const secret: Secret = process.env.JWT_SECRET || 'secret';
+  const secret = getJwtSecret();
   const options: SignOptions = {
     algorithm: 'HS256',
     expiresIn: '24h',
@@ -48,6 +56,8 @@ export function generateSessionToken(userId: string) {
   };
 }
 
+import { generateSecureOtp } from './otp';
+
 export function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return generateSecureOtp();
 }

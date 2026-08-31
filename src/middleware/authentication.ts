@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+import { getJwtSecret } from '../utils/generatetoken';
+
 export interface AuthenticatedRequest extends Request {
   user?: any;
 }
@@ -19,7 +21,11 @@ export const authenticate = (req: AuthenticatedRequest, res: Response, next: Nex
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const decoded: any = jwt.verify(token, getJwtSecret());
+    if (decoded.accountStatus && decoded.accountStatus !== 'ACTIVE') {
+      res.status(403).json({ message: 'Account is suspended or restricted.' });
+      return;
+    }
     req.user = decoded;
     next();
   } catch (err) {

@@ -24,10 +24,10 @@ import {
 
 const router = express.Router();
 
+router.use(authenticate);
+
 router.get('/public/:id', getProfileById);
 router.get('/role/:role', getProfilesByUserRole);
-
-router.use(authenticate);
 
 router.post('/seeker', authorize(['seeker']), createSeekerProfile);
 router.post('/broker', authorize(['broker']), createBrokerProfileHandler);

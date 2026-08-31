@@ -27,14 +27,18 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import axios from 'axios';
+import crypto from 'crypto';
+import { Session } from '../Session/model';
 import {
   generateAccessToken,
   generateRefreshToken,
+  getJwtSecret,
 } from '../../utils/generatetoken';
 import {
   sendVerificationCodeEmail,
   sendResetCodeEmail,
 } from '../../service/emailservice';
+import { generateSecureOtp } from '../../utils/otp';
 import { User, Token } from './model';
 import { getPagination, paginatedData } from '../../utils/pagination';
 
@@ -82,7 +86,7 @@ export async function signup(req: Request, res: Response, next?: NextFunction): 
 
     const newUser = await createUser(newUserData);
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = generateSecureOtp();
 
     await Token.create({
       userId: newUser.id,
@@ -200,13 +204,25 @@ export async function setPassword(req: Request, res: Response, next?: NextFuncti
 
 export async function completeProfile(req: Request, res: Response, next?: NextFunction): Promise<void> {
   try {
+    const reqUser = (req as any).user;
+    const authenticatedUserId = reqUser?.sub || reqUser?.id;
     const { email } = req.body;
-    if (!email) {
-      res.status(400).json({ message: 'Email is required.' });
-      return;
+
+    let user: any;
+    if (authenticatedUserId) {
+      user = await User.findByPk(authenticatedUserId);
+      if (email && user && user.email.toLowerCase() !== email.toLowerCase()) {
+        res.status(403).json({ message: 'Forbidden: You cannot modify another user profile.' });
+        return;
+      }
+    } else {
+      if (!email) {
+        res.status(400).json({ message: 'Email is required.' });
+        return;
+      }
+      user = await findUserByEmail(email);
     }
 
-    const user = await findUserByEmail(email);
     if (!user) {
       res.status(404).json({ message: 'User not found.' });
       return;
@@ -253,13 +269,25 @@ export async function completeProfile(req: Request, res: Response, next?: NextFu
 
 export async function verifyIdentity(req: Request, res: Response, next?: NextFunction): Promise<void> {
   try {
+    const reqUser = (req as any).user;
+    const authenticatedUserId = reqUser?.sub || reqUser?.id;
     const { email } = req.body;
-    if (!email) {
-      res.status(400).json({ message: 'Email is required.' });
-      return;
+
+    let user: any;
+    if (authenticatedUserId) {
+      user = await User.findByPk(authenticatedUserId);
+      if (email && user && user.email.toLowerCase() !== email.toLowerCase()) {
+        res.status(403).json({ message: 'Forbidden: You cannot verify identity for another user.' });
+        return;
+      }
+    } else {
+      if (!email) {
+        res.status(400).json({ message: 'Email is required.' });
+        return;
+      }
+      user = await findUserByEmail(email);
     }
 
-    const user = await findUserByEmail(email);
     if (!user) {
       res.status(404).json({ message: 'User not found.' });
       return;
@@ -286,7 +314,7 @@ export async function verifyIdentity(req: Request, res: Response, next?: NextFun
     user.registrationStep = 3;
     await user.save();
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = generateSecureOtp();
 
     await Token.destroy({ where: { userId: user.id, token_type: 'verify_account' } });
     await Token.create({
@@ -336,20 +364,20 @@ export async function verifyEmail(req: Request, res: Response, next?: NextFuncti
       return;
     }
 
-    let tokenRecord: any;
-    if (email) {
-      const userByEmail = await findUserByEmail(email);
-      if (userByEmail) {
-        tokenRecord = await Token.findOne({
-          where: { userId: userByEmail.id, token: code, token_type: 'verify_account' },
-        });
-      }
+    if (!email) {
+      res.status(400).json({ message: 'Email address is required for verification.' });
+      return;
     }
-    if (!tokenRecord) {
-      tokenRecord = await Token.findOne({
-        where: { token: code, token_type: 'verify_account' },
-      });
+
+    const userByEmail = await findUserByEmail(email);
+    if (!userByEmail) {
+      res.status(400).json({ message: 'Invalid or expired verification code.' });
+      return;
     }
+
+    const tokenRecord: any = await Token.findOne({
+      where: { userId: userByEmail.id, token: code, token_type: 'verify_account' },
+    });
 
     if (!tokenRecord) {
       res.status(400).json({ message: 'Invalid or expired verification code.' });
@@ -418,7 +446,7 @@ export async function resendVerificationCode(req: Request, res: Response): Promi
       },
     });
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = generateSecureOtp();
 
     await Token.create({
       userId: user.id,
@@ -447,12 +475,24 @@ export async function login(req: Request, res: Response, next?: NextFunction): P
       identifier = identifier.toLowerCase();
     }
 
-    const user = isEmail
+    const user: any = isEmail
       ? await findUserByEmail(identifier)
       : await User.findOne({ where: { username: identifier } });
 
     if (!user) {
-      res.status(401).json({ message: 'Invalid credentials - user not found.' });
+      res.status(401).json({ message: 'Invalid credentials.' });
+      return;
+    }
+
+    if (user.accountStatus && user.accountStatus !== 'ACTIVE') {
+      res.status(403).json({ message: 'Account is suspended or restricted.' });
+      return;
+    }
+
+    if (user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()) {
+      res.status(429).json({
+        message: 'Account is temporarily locked due to multiple failed login attempts. Please try again in 15 minutes.',
+      });
       return;
     }
 
@@ -464,7 +504,7 @@ export async function login(req: Request, res: Response, next?: NextFunction): P
     }
 
     if (!user.verified) {
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCode = generateSecureOtp();
 
       await Token.destroy({
         where: { userId: user.id, token_type: 'verify_account' },
@@ -487,8 +527,20 @@ export async function login(req: Request, res: Response, next?: NextFunction): P
 
     const isMatch = await Userhash.comparePassword(password, user.password);
     if (!isMatch) {
-      res.status(401).json({ message: 'Invalid credentials - password mismatch.' });
+      const attempts = (user.failedLoginAttempts || 0) + 1;
+      user.failedLoginAttempts = attempts;
+      if (attempts >= 5) {
+        user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+      }
+      await user.save();
+      res.status(401).json({ message: 'Invalid credentials.' });
       return;
+    }
+
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      user.failedLoginAttempts = 0;
+      user.lockedUntil = null;
+      await user.save();
     }
 
     const accessToken = generateAccessToken(user.id, user.role);
@@ -496,7 +548,7 @@ export async function login(req: Request, res: Response, next?: NextFunction): P
     const Role = user.role;
     const verify = user.verified;
 
-    const decodedRefreshToken: any = jwt.verify(refreshTokenValue, process.env.JWT_SECRET || 'secret');
+    const decodedRefreshToken: any = jwt.verify(refreshTokenValue, getJwtSecret());
     let tokenRecord: any = await Token.findOne({
       where: { userId: user.id, token_type: 'refresh_token' },
     });
@@ -514,10 +566,23 @@ export async function login(req: Request, res: Response, next?: NextFunction): P
       });
     }
 
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+    const deviceInfo = req.headers['user-agent'] || 'Unknown Device';
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
+
+    const session: any = await Session.create({
+      userId: user.id,
+      refreshTokenHash,
+      deviceInfo,
+      ipAddress,
+      lastActiveAt: new Date(),
+    });
+
     res.status(200).json({
       message: 'Login successful',
       access_token: accessToken,
       refresh_token: refreshTokenValue,
+      sessionId: session.id,
       role: Role,
       verification: verify,
       id: user.id,
@@ -537,6 +602,22 @@ export async function refreshToken(req: Request, res: Response, next?: NextFunct
       return;
     }
 
+    const tokenHash = crypto.createHash('sha256').update(refresh_token).digest('hex');
+    const existingSession: any = await Session.findOne({
+      where: { refreshTokenHash: tokenHash },
+    });
+
+    if (existingSession && existingSession.revokedAt) {
+      await Session.update(
+        { revokedAt: new Date() },
+        { where: { userId: existingSession.userId, revokedAt: null } }
+      );
+      res.status(403).json({
+        message: 'Security Alert: Revoked refresh token reused. All active sessions have been invalidated.',
+      });
+      return;
+    }
+
     const storedToken: any = await Token.findOne({
       where: { token: refresh_token, token_type: 'refresh_token' },
     });
@@ -546,21 +627,36 @@ export async function refreshToken(req: Request, res: Response, next?: NextFunct
       return;
     }
 
-    const decoded: any = jwt.verify(refresh_token, process.env.JWT_SECRET || 'secret');
+    const decoded: any = jwt.verify(refresh_token, getJwtSecret());
 
-    const refreshUser = await User.findByPk(decoded.sub);
-    if (!refreshUser) {
-      res.status(403).json({ message: 'Invalid refresh token user.' });
+    const refreshUser: any = await User.findByPk(decoded.sub);
+    if (!refreshUser || (refreshUser.accountStatus && refreshUser.accountStatus !== 'ACTIVE')) {
+      res.status(403).json({ message: 'Invalid or restricted user.' });
       return;
     }
+
     const newAccessToken = generateAccessToken(refreshUser.id, refreshUser.role);
     const newRefreshToken = generateRefreshToken(decoded.sub);
-
-    const decodedNewRefreshToken: any = jwt.verify(newRefreshToken, process.env.JWT_SECRET || 'secret');
+    const newDecodedRefreshToken: any = jwt.verify(newRefreshToken, getJwtSecret());
+    const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
 
     storedToken.token = newRefreshToken;
-    storedToken.expiresIn = new Date(decodedNewRefreshToken.exp * 1000);
+    storedToken.expiresIn = new Date(newDecodedRefreshToken.exp * 1000);
     await storedToken.save();
+
+    if (existingSession) {
+      existingSession.refreshTokenHash = newTokenHash;
+      existingSession.lastActiveAt = new Date();
+      await existingSession.save();
+    } else {
+      await Session.create({
+        userId: refreshUser.id,
+        refreshTokenHash: newTokenHash,
+        deviceInfo: req.headers['user-agent'] || 'Unknown Device',
+        ipAddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
+        lastActiveAt: new Date(),
+      });
+    }
 
     res.status(200).json({
       access_token: newAccessToken,
@@ -608,7 +704,11 @@ export async function forgotPassword(req: Request, res: Response, next?: NextFun
       return;
     }
 
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCode = generateSecureOtp();
+
+    await Token.destroy({
+      where: { userId: user.id, token_type: 'reset_password' },
+    });
 
     await Token.create({
       userId: user.id,
@@ -632,9 +732,18 @@ export async function resetPassword(req: Request, res: Response, next?: NextFunc
   try {
     const validatedData = await resetPasswordSchema.validateAsync(req.body);
 
-    const tokenRecord: any = await Token.findOne({
-      where: { token: validatedData.token, token_type: 'reset_password' },
-    });
+    let whereClause: any = { token: validatedData.token, token_type: 'reset_password' };
+
+    if (validatedData.email) {
+      const targetUser = await findUserByEmail(validatedData.email);
+      if (!targetUser) {
+        res.status(400).json({ message: 'Invalid or expired token.' });
+        return;
+      }
+      whereClause.userId = targetUser.id;
+    }
+
+    const tokenRecord: any = await Token.findOne({ where: whereClause });
 
     if (!tokenRecord || new Date(tokenRecord.expiresIn).getTime() < Date.now()) {
       res.status(400).json({ message: 'Invalid or expired token.' });

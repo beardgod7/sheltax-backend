@@ -200,9 +200,21 @@ export async function create(req: Request, res: Response): Promise<void> {
       res.status(400).json({ success: false, message: 'At least 8 property photos are required.' });
       return;
     }
+    const allowedFields = [
+      'title', 'description', 'intent', 'propertyType', 'price', 'location',
+      'city', 'state', 'images', 'videoUrl', 'amenities', 'specifications',
+      'rentalFrequency', 'depositAmount', 'leaseDuration',
+    ];
+    const sanitizedBody: Record<string, any> = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        sanitizedBody[field] = req.body[field];
+      }
+    }
+
     const listing = await sequelize.transaction(async (transaction) => {
       const created = await Listing.create({
-        ...req.body,
+        ...sanitizedBody,
         intent: String(req.body.intent).toUpperCase(),
         ownerId,
         approvalStatus: 'PENDING',

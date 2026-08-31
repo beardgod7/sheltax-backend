@@ -5,8 +5,13 @@ import logger from './logger';
 
 export async function seedSuperAdmin() {
   try {
-    const adminEmail = 'admin@sheltax.com';
-    const adminPassword = '!Shelta-x@12026!';
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      logger.info('Skipping Super Admin seeding: ADMIN_EMAIL and ADMIN_PASSWORD environment variables not provided.');
+      return;
+    }
 
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
@@ -15,9 +20,9 @@ export async function seedSuperAdmin() {
     if (admin) {
       admin.password = hashedPassword;
       admin.role = 'admin';
-      admin.firstName = 'Super';
-      admin.surname = 'Admin';
-      admin.isVerified = true;
+      admin.firstName = admin.firstName || 'Super';
+      admin.surname = admin.surname || 'Admin';
+      admin.verified = true;
       await admin.save();
       logger.success(`Super Admin user updated: ${adminEmail}`);
     } else {
@@ -27,7 +32,7 @@ export async function seedSuperAdmin() {
         firstName: 'Super',
         surname: 'Admin',
         role: 'admin',
-        isVerified: true,
+        verified: true,
       });
       logger.success(`Super Admin user seeded: ${adminEmail}`);
     }

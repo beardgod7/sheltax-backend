@@ -4,6 +4,11 @@ import sequelize from '../../config/dbconfig';
 import { User } from '../Authentication/model';
 import { OwnerProfile, BrokerProfile } from '../Profile/model';
 import { Listing, ReviewDecision, Notification } from '../Listing/model';
+import { UserVerification } from '../Verification/model';
+import { PropertyAgentAuthorization, Commission } from '../Agent/model';
+import { logAuditAction } from '../Audit/service';
+import { AuditLog } from '../Audit/model';
+import { Session } from '../Session/model';
 import { sendModerationEmail } from '../../service/emailservice';
 import { getPagination, paginatedData } from '../../utils/pagination';
 import paymentRepository from '../Payment/repository';
@@ -395,6 +400,19 @@ export class AdminController {
           kycRejectionReason: isVerified ? null : rejectionReason.trim(),
         }, { transaction });
 
+        await UserVerification.update(
+          {
+            status: status as any,
+            reviewerId,
+            reviewedAt: new Date(),
+            rejectionReason: isVerified ? null : rejectionReason.trim(),
+          },
+          {
+            where: { userId: user.id, status: 'PENDING' },
+            transaction,
+          }
+        );
+
         const cycle = await ReviewDecision.max('cycle', {
           where: { subjectType: 'KYC', subjectId: user.id },
           transaction,
@@ -418,6 +436,15 @@ export class AdminController {
           type: `KYC_${status}`,
           link: '/owner/listings/create',
         }, { transaction });
+      });
+
+      await logAuditAction({
+        actorId: reviewerId,
+        action: `KYC_${status}`,
+        resourceType: 'USER',
+        resourceId: user.id,
+        ipAddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+        changes: { isVerified, rejectionReason: isVerified ? null : rejectionReason.trim() },
       });
 
       sendModerationEmail(
@@ -458,10 +485,238 @@ export class AdminController {
       });
     } catch (error: any) {
       console.error('Get Admin Sales Error:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch sales report.',
+      res.status(500).json({ success: false, message: 'Failed to fetch sales data', error: error.message });
+    }
+  }
+
+  // GET /admin/audit-logs
+  async getAuditLogs(req: Request, res: Response): Promise<void> {
+    try {
+      const pagination = getPagination(req.query, { defaultLimit: 20 });
+      const { action, resourceType, q } = req.query;
+
+      const whereClause: any = {};
+      if (action) whereClause.action = action;
+      if (resourceType) whereClause.resourceType = resourceType;
+
+      const { count, rows: logs } = await AuditLog.findAndCountAll({
+        where: whereClause,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: [['createdAt', 'DESC']],
+        include: [
+          {
+            model: User,
+            as: 'actor',
+            attributes: ['id', 'firstName', 'surname', 'email', 'role'],
+          },
+        ],
       });
+
+      res.status(200).json({
+        success: true,
+        message: 'Audit logs retrieved successfully',
+        data: paginatedData('logs', logs, count, pagination),
+      });
+    } catch (error: any) {
+      console.error('Get Audit Logs Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch audit logs', error: error.message });
+    }
+  }
+
+  // GET /admin/sessions
+  async getAllSessions(req: Request, res: Response): Promise<void> {
+    try {
+      const pagination = getPagination(req.query, { defaultLimit: 20 });
+      const { status } = req.query;
+
+      const whereClause: any = {};
+      if (status === 'active') whereClause.revokedAt = null;
+      if (status === 'revoked') whereClause.revokedAt = { [Op.ne]: null };
+
+      const { count, rows: sessions } = await Session.findAndCountAll({
+        where: whereClause,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: [['lastActiveAt', 'DESC']],
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'firstName', 'surname', 'email', 'role'],
+          },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Sessions retrieved successfully',
+        data: paginatedData('sessions', sessions, count, pagination),
+      });
+    } catch (error: any) {
+      console.error('Get Admin Sessions Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch sessions', error: error.message });
+    }
+  }
+
+  // GET /admin/agent-licences
+  async getAgentLicences(req: Request, res: Response): Promise<void> {
+    try {
+      const pagination = getPagination(req.query, { defaultLimit: 20 });
+      const { status } = req.query as Record<string, string>;
+
+      const whereClause: any = {};
+      if (status && status !== 'ALL') {
+        whereClause.licenceStatus = status.toUpperCase();
+      }
+
+      const { count, rows: brokers } = await BrokerProfile.findAndCountAll({
+        where: whereClause,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: [['updatedAt', 'DESC']],
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'firstName', 'surname', 'email', 'role', 'phoneNumber'],
+          },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Agent licences retrieved successfully',
+        data: paginatedData('records', brokers, count, pagination),
+      });
+    } catch (error: any) {
+      console.error('Get Agent Licences Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch agent licences', error: error.message });
+    }
+  }
+
+  // PATCH /admin/agent-licences/:id/verify
+  async verifyAgentLicence(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id as string;
+      const { isVerified, rejectionReason } = req.body;
+      const adminId = (req as any).user?.id;
+
+      let brokerProfile: any = await BrokerProfile.findByPk(id);
+      if (!brokerProfile) {
+        brokerProfile = await BrokerProfile.findOne({ where: { userId: id } });
+      }
+
+      if (!brokerProfile) {
+        res.status(404).json({ success: false, message: 'Agent broker profile not found' });
+        return;
+      }
+
+      const newStatus = isVerified ? 'VERIFIED' : 'REJECTED';
+
+      await brokerProfile.update({
+        licenceStatus: newStatus,
+        isVerified: !!isVerified,
+      });
+
+      // Update UserVerification record
+      let verification = await UserVerification.findOne({
+        where: { userId: brokerProfile.userId, verificationType: 'AGENT_LICENCE' },
+      });
+
+      if (verification) {
+        await verification.update({
+          status: isVerified ? 'APPROVED' : 'REJECTED',
+          reviewerId: adminId,
+          rejectionReason: isVerified ? null : rejectionReason || 'Licence verification failed',
+          reviewedAt: new Date(),
+        });
+      }
+
+      await logAuditAction({
+        actorId: adminId || brokerProfile.userId,
+        action: isVerified ? 'AGENT_LICENCE_APPROVED' : 'AGENT_LICENCE_REJECTED',
+        resourceType: 'BrokerProfile',
+        resourceId: brokerProfile.id,
+        ipAddress: req.ip,
+        changes: { isVerified, newStatus, rejectionReason },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Agent licence status updated to ${newStatus}`,
+        data: brokerProfile,
+      });
+    } catch (error: any) {
+      console.error('Verify Agent Licence Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to verify agent licence', error: error.message });
+    }
+  }
+
+  // GET /admin/agent-authorizations
+  async getAgentAuthorizations(req: Request, res: Response): Promise<void> {
+    try {
+      const pagination = getPagination(req.query, { defaultLimit: 20 });
+      const { status } = req.query as Record<string, string>;
+
+      const whereClause: any = {};
+      if (status && status !== 'ALL') {
+        whereClause.status = status.toUpperCase();
+      }
+
+      const { count, rows: authorizations } = await PropertyAgentAuthorization.findAndCountAll({
+        where: whereClause,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: [['createdAt', 'DESC']],
+        include: [
+          { model: User, as: 'agent', attributes: ['id', 'firstName', 'surname', 'email'] },
+          { model: User, as: 'owner', attributes: ['id', 'firstName', 'surname', 'email'] },
+          { model: Listing, as: 'property', attributes: ['id', 'title', 'location', 'price'] },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Agent authorizations retrieved successfully',
+        data: paginatedData('records', authorizations, count, pagination),
+      });
+    } catch (error: any) {
+      console.error('Get Agent Authorizations Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch agent authorizations', error: error.message });
+    }
+  }
+
+  // GET /admin/commissions
+  async getAllCommissions(req: Request, res: Response): Promise<void> {
+    try {
+      const pagination = getPagination(req.query, { defaultLimit: 20 });
+      const { status } = req.query as Record<string, string>;
+
+      const whereClause: any = {};
+      if (status && status !== 'ALL') {
+        whereClause.status = status.toUpperCase();
+      }
+
+      const { count, rows: commissions } = await Commission.findAndCountAll({
+        where: whereClause,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: [['createdAt', 'DESC']],
+        include: [
+          { model: User, as: 'agent', attributes: ['id', 'firstName', 'surname', 'email'] },
+          { model: User, as: 'owner', attributes: ['id', 'firstName', 'surname', 'email'] },
+          { model: Listing, as: 'property', attributes: ['id', 'title', 'location', 'price'] },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Commission ledger retrieved successfully',
+        data: paginatedData('records', commissions, count, pagination),
+      });
+    } catch (error: any) {
+      console.error('Get Admin Commissions Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch commission ledger', error: error.message });
     }
   }
 }
